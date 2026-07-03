@@ -238,7 +238,7 @@ El proyecto implementa todos los requerimientos de manipulación y programación
 | Funciones UDF | 6 | `08_functions.sql` | Escalares (`fn_epley_1rm`) y tipo tabla (`fn_exercise_history`) |
 | Triggers | 6 | `09_triggers.sql` | Validación, cálculo de 1RM, detección de PR, auditoría |
 
-Todos estos objetos están conectados a comandos del CLI de GymOps; el mapeo detallado por fase (con el código SQL de cada uno) se documenta en `manual_usuario.md`.
+Todos estos objetos están conectados a comandos del CLI de GymOps; el mapeo detallado por fase (con el código SQL de cada uno) se documenta en el manual de usuario entregado al curso.
 
 ---
 

@@ -3,7 +3,7 @@
 > Herramienta de seguimiento de entrenamiento para la terminal, construida como **proyecto final de Base de Datos II (UNFV)**.
 
 > [!IMPORTANT]
-> **Enfoque del proyecto.** GymOps es una aplicación CLI real, pero su propósito académico es demostrar el **uso avanzado de una base de datos relacional en PostgreSQL**. Toda la lógica de negocio (cálculo de 1RM, detección de PRs, auditoría, validaciones) vive en la base de datos mediante procedimientos almacenados, funciones, triggers, vistas e índices — no en el código Python, que actúa solo como capa de presentación sobre `psycopg2`. Cada comando del CLI está mapeado a los objetos SQL que ejecuta; ver [`proyecto_bdII/manual_usuario.md`](proyecto_bdII/manual_usuario.md) para el detalle por fase con el código SQL de cada uno.
+> **Enfoque del proyecto.** GymOps es una aplicación CLI real, pero su propósito académico es demostrar el **uso avanzado de una base de datos relacional en PostgreSQL**. Toda la lógica de negocio (cálculo de 1RM, detección de PRs, auditoría, validaciones) vive en la base de datos mediante procedimientos almacenados, funciones, triggers, vistas e índices — no en el código Python, que actúa solo como capa de presentación sobre `psycopg2`. Cada comando del CLI está mapeado a los objetos SQL que ejecuta; el detalle por fase con el código SQL de cada uno se documenta en el manual de usuario entregado al curso (no incluido en este repositorio).
 
 ### ¿A quién va dirigido?
 GymOps está diseñado principalmente para:
@@ -142,7 +142,7 @@ gymops pr-timeline
 gymops exercise-stats --exercise "Barbell Bench Press"
 ```
 
-> Todos estos comandos consumen directamente objetos SQL del servidor. El mapeo completo comando → objeto SQL (con el código de cada vista, función, SP y trigger) está documentado por fase en [`proyecto_bdII/manual_usuario.md`](proyecto_bdII/manual_usuario.md).
+> Todos estos comandos consumen directamente objetos SQL del servidor. El mapeo completo comando → objeto SQL (con el código de cada vista, función, SP y trigger) está documentado por fase en el manual de usuario entregado al curso.
 
 ---
 
@@ -263,8 +263,6 @@ GymOps-FIEI/
 │   └── report.py       # Generador de resúmenes semanales
 ├── proyecto_bdII/
 │   ├── DESCRIPCION_PROYECTO.md   # Descripción completa del proyecto (BD II)
-│   ├── PLANNING.md               # Seguimiento de fases y plan de implementación
-│   ├── manual_usuario.md         # Manual de uso + guía por fase (comando → código SQL)
 │   └── sql/                      # Todos los scripts SQL (fases 1–7)
 └── tests/              # Suite de pruebas con pytest
 ```
@@ -288,12 +286,6 @@ uv run pytest
 
 ## BD II — Proyecto de curso
 
-Este repositorio es el **proyecto final de Base de Datos II** en la UNFV. Documentación del proyecto:
-
-| Documento | Contenido |
-|-----------|-----------|
-| [`proyecto_bdII/DESCRIPCION_PROYECTO.md`](proyecto_bdII/DESCRIPCION_PROYECTO.md) | Problemática, objetivos, alcance, procesos, entidades, reglas de negocio, **normalización (3FN)** y resumen de implementación SQL. |
-| [`proyecto_bdII/PLANNING.md`](proyecto_bdII/PLANNING.md) | Roadmap completo por fases (1–7) y plan de implementación SQL. |
-| [`proyecto_bdII/manual_usuario.md`](proyecto_bdII/manual_usuario.md) | Manual de usuario y **guía por fase**: cada comando del CLI mapeado al código SQL (vistas, SPs, funciones, triggers, índices) que ejecuta. |
+Este repositorio es el **proyecto final de Base de Datos II** en la UNFV. La documentación completa (planning por fases, manual de usuario con el mapeo comando → código SQL, diagramas y formato oficial) se entrega al curso por separado; en este repositorio público queda como referencia [`proyecto_bdII/DESCRIPCION_PROYECTO.md`](proyecto_bdII/DESCRIPCION_PROYECTO.md), con la problemática, objetivos, alcance, entidades, reglas de negocio, **normalización (3FN)** y resumen de implementación SQL.
 
 **Stack**: PostgreSQL 16 · Python 3.12 · Docker · Typer · Rich · psycopg2
