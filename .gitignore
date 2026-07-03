@@ -44,3 +44,6 @@ digest_*.md
 # Environment variables
 .env
 .env.local
+
+# Notas locales de instrucciones (no forma parte del entregable)
+INSTRUCCIONES.md
