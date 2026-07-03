@@ -79,6 +79,18 @@ def get_connection(db_path: Optional[Path] = None) -> Generator[Any, None, None]
 
 
 # ---------------------------------------------------------------------------
+# Generic fetch helper
+# ---------------------------------------------------------------------------
+
+def fetch_all(query: str, params: tuple = ()) -> list[dict]:
+    """Run a read-only query and return all rows as dicts."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+            return [dict(r) for r in cur.fetchall()]
+
+
+# ---------------------------------------------------------------------------
 # Helper parsers and normalizers
 # ---------------------------------------------------------------------------
 
@@ -853,6 +865,82 @@ def get_weekly_digest_stats(days: int = 7) -> list[dict]:
                 (days,)
             )
             return [dict(r) for r in cur.fetchall()]
+
+
+# ---------------------------------------------------------------------------
+# Report views & stored procedures (fases 3, 5 y 6 del proyecto SQL)
+# ---------------------------------------------------------------------------
+
+def get_session_summaries(limit: int = 20) -> list[dict]:
+    """Session dashboard from the v_session_summary view."""
+    return fetch_all("SELECT * FROM v_session_summary LIMIT %s", (limit,))
+
+
+def get_exercise_progress(exercise_name: str) -> list[dict]:
+    """1RM progression over time from the v_exercise_progress view."""
+    exercise = get_exercise_by_name(exercise_name)
+    if not exercise:
+        raise ValueError(f"Exercise '{exercise_name}' not found.")
+    return fetch_all(
+        """SELECT p.* FROM v_exercise_progress p
+           JOIN exercise e ON e.name = p.ejercicio
+           WHERE e.id = %s""",
+        (exercise.id,),
+    )
+
+
+def get_muscle_volume_weeks() -> list[dict]:
+    """Weekly volume per muscle (last 8 weeks) from v_muscle_volume_week."""
+    return fetch_all("SELECT * FROM v_muscle_volume_week")
+
+
+def get_weekly_volume(week_start: str) -> list[dict]:
+    """Volume per muscle for one week via the fn_weekly_volume table function."""
+    return fetch_all("SELECT * FROM fn_weekly_volume(%s::date)", (week_start,))
+
+
+def get_exercise_catalog() -> list[dict]:
+    """Exercise catalog with usage stats from the v_exercise_catalog view."""
+    return fetch_all("SELECT * FROM v_exercise_catalog")
+
+
+def get_program_overview(program_name: str) -> list[dict]:
+    """Full program structure from the v_program_overview view."""
+    normalized = normalize_program_name(program_name)
+    return fetch_all(
+        "SELECT * FROM v_program_overview WHERE LOWER(programa) = LOWER(%s)",
+        (normalized,),
+    )
+
+
+def get_pr_timeline() -> list[dict]:
+    """Chronological PR history from the v_pr_timeline view."""
+    return fetch_all("SELECT * FROM v_pr_timeline")
+
+
+def get_exercise_stats(exercise_name: str) -> list[dict]:
+    """Full exercise metrics via the sp_get_exercise_stats stored procedure."""
+    exercise = get_exercise_by_name(exercise_name)
+    if not exercise:
+        raise ValueError(f"Exercise '{exercise_name}' not found.")
+    return fetch_all("SELECT * FROM sp_get_exercise_stats(%s)", (exercise.id,))
+
+
+def get_weekly_digest_sp(week_date: Optional[str] = None) -> list[dict]:
+    """Weekly per-muscle digest via the sp_weekly_digest stored procedure."""
+    return fetch_all(
+        "SELECT * FROM sp_weekly_digest(COALESCE(%s::date, CURRENT_DATE))",
+        (week_date,),
+    )
+
+
+def get_weekly_digest_view(weeks: int = 4) -> list[dict]:
+    """Historical weekly summary from the v_weekly_digest view."""
+    return fetch_all(
+        """SELECT * FROM v_weekly_digest
+           WHERE semana_inicio >= CURRENT_DATE - (%s * INTERVAL '7 days')""",
+        (weeks,),
+    )
 
 
 # ---------------------------------------------------------------------------

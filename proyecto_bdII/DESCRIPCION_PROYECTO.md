@@ -77,6 +77,8 @@ Implementar una base de datos relacional en PostgreSQL que soporte el sistema Gy
 | `workout_set` | Set individual registrado (ejercicio, reps, peso, 1RM calculado) |
 | `personal_record` | Récord personal por ejercicio (máximo 1RM histórico) |
 | `audit_log` | Registro de auditoría de cambios en sets y PRs |
+| `guide_article` | Guías y artículos informativos de fitness (contenido en Markdown) |
+| `active_program` | Tabla de control (fila única) que guarda el programa y día activos del usuario |
 
 ---
 
@@ -89,7 +91,10 @@ Implementar una base de datos relacional en PostgreSQL que soporte el sistema Gy
 5. **RN-05:** Un `program_day` pertenece a un único `program`.
 6. **RN-06:** La `workout_session` registra la fecha y hora de inicio; la de fin se actualiza al cerrar la sesión.
 7. **RN-07:** El campo `is_pr` en `workout_set` se establece en `TRUE` automáticamente si el set rompe el PR actual.
-8. **RN-08:** El volumen de un set = `peso × reps` (campo calculado o función).
+8. **RN-08:** El volumen de un set = `peso × reps` (campo calculado por trigger).
+9. **RN-09:** No se pueden registrar sets en una sesión ya cerrada (`ended_at IS NOT NULL`), garantizando la inmutabilidad del historial (trigger BEFORE INSERT).
+10. **RN-10:** Toda operación INSERT/UPDATE/DELETE sobre `workout_set`, y todo cambio de `max_1rm` en `personal_record`, queda registrada en `audit_log` con los datos anteriores y nuevos en formato JSONB (RF-10, RNF-07).
+11. **RN-11:** Un ejercicio no puede eliminarse si está referenciado por un set o una rutina (`ON DELETE RESTRICT`); un `personal_record` es único por ejercicio (relación 1:1).
 
 ---
 
@@ -101,6 +106,34 @@ Implementar una base de datos relacional en PostgreSQL que soporte el sistema Gy
 | **Docker** | Permite levantar PostgreSQL de forma reproducible y aislada, sin instalación directa. Facilita el despliegue consistente del entorno. |
 | **Python + Typer + Rich** | Stack de la aplicación CLI. Se conecta a PostgreSQL vía `psycopg2`. Demuestra integración real entre app y BD. |
 | **PostgreSQL Nativo** | El diseño del sistema en PostgreSQL aprovecha características enterprise avanzadas (procedimientos almacenados, triggers complejos, vistas y funciones) para asegurar la integridad, consistencia y el rendimiento de la base de datos. |
+
+---
+
+### 1.8 Normalización del Modelo Relacional
+
+El esquema está normalizado hasta la **Tercera Forma Normal (3FN)**. A continuación se justifica el cumplimiento de cada forma normal y se documentan las dos desnormalizaciones deliberadas por diseño.
+
+**Primera Forma Normal (1FN) — valores atómicos, sin grupos repetidos:**
+Todas las tablas cumplen 1FN. No existen atributos multivaluados ni listas embebidas; cada columna almacena un único valor. La única excepción aparente es `routine_exercise.reps_target VARCHAR(20)`, que guarda rangos objetivo como `"6-8"` o `"8-12"`. Se trata como un **valor atómico de presentación** (una etiqueta de rango prescrito, no dos datos independientes sobre los que se opere aritméticamente en la BD), por lo que no rompe 1FN en la práctica.
+
+**Segunda Forma Normal (2FN) — sin dependencias parciales de una clave compuesta:**
+Se cumple de forma trivial porque **todas las tablas usan una clave primaria sustituta de una sola columna** (`id SERIAL`). Al no existir claves primarias compuestas, no puede haber dependencias parciales. Las claves candidatas naturales se protegen con restricciones `UNIQUE` (p. ej. `exercise.name`, `program_day(program_id, day_order)`, `routine_exercise(program_day_id, exercise_id)`, `personal_record.exercise_id`).
+
+**Tercera Forma Normal (3FN) — sin dependencias transitivas:**
+Cada atributo no clave depende únicamente de la clave primaria. No se duplican datos de entidades relacionadas: `exercise` guarda `muscle_group_id` (FK) en lugar del nombre del músculo; `workout_set` referencia `session_id` y `exercise_id` por FK sin copiar sus datos; `personal_record` apunta al `set_id` en vez de replicar peso, reps y fecha del set.
+
+**Desnormalizaciones deliberadas (por rendimiento e integridad):**
+La tabla `workout_set` almacena tres campos que son **derivables** de `weight_kg` y `reps`:
+
+| Campo | Fórmula de derivación | Justificación de almacenarlo |
+|-------|----------------------|------------------------------|
+| `estimated_1rm` | Epley: `weight × (1 + reps/30)` | Evita recalcular en cada consulta de historial/PRs; consultado con altísima frecuencia. |
+| `volume` | `weight × reps` | Se agrega (`SUM`) en casi todas las vistas de reporte; precalcularlo elimina cómputo repetido. |
+| `is_pr` | Comparación contra `personal_record` | Permite filtrar sets-PR con un índice parcial (`WHERE is_pr = TRUE`) sin subconsultas. |
+
+Estos campos **no violan 3FN en sentido estricto** (no son dependencias transitivas entre atributos no clave: cada uno depende de la clave del propio set, no de otro atributo no clave por una cadena). Constituyen una **redundancia controlada**: los triggers `trg_calculate_1rm` y `trg_update_pr` los rellenan y mantienen consistentes automáticamente, de modo que la aplicación nunca los calcula ni puede desincronizarlos. Es el patrón recomendado de desnormalización — redundancia gestionada por el motor, no por el código cliente.
+
+> **Nota sobre gestores:** en PostgreSQL todas las tablas son *heaps* y todos los índices son secundarios; no existe el concepto de índice *clustered/nonclustered* de SQL Server como propiedad mantenida. La optimización se logra con índices B-tree, parciales y en expresión (ver Fase 4), no con ordenamiento físico de la tabla.
 
 ---
 
@@ -121,6 +154,9 @@ Motor analítico. Calcula 1RM estimado (Epley), detecta PRs, y analiza sobrecarg
 ### 2.5 Módulo de Reportes
 Generación de resúmenes en formato Markdown/texto. Consulta vistas pre-definidas en la BD para informes de entrenamiento semanal.
 
+### 2.6 Módulo de Guías
+Consulta de artículos informativos de fitness (`gymops guide list` / `gymops guide read`) almacenados en la tabla `guide_article` con contenido en Markdown, renderizado directamente en la terminal.
+
 ---
 
 ## 3. Entorno Tecnológico
@@ -138,20 +174,71 @@ Control de versiones: Git + GitHub
 
 ---
 
-## 4. Diagrama de Entidades (Preliminar)
+## 4. Diagrama de Entidades
+
+Notación: `1 ──< N` indica una relación uno-a-muchos (el lado `<` es el "muchos", donde vive la FK). Las flechas apuntan de la tabla hija (FK) a la tabla padre (PK).
 
 ```
-muscle_group ──< exercise >── routine_exercise ──> program_day ──> program
-                    │
-                    ▼
-              workout_set ──> workout_session
-                    │
-                    ▼
-              personal_record
-                    │
-                    ▼
-               audit_log
+                    program
+                       ▲ 1
+                       │
+                       │ N
+                  program_day ◄──────────────┐
+                    ▲ 1     ▲ 1              │ N
+                    │       │ N              │
+                    │ N   workout_session    │
+          routine_exercise    ▲ 1            │
+                    │ N       │ N            │
+                    │      workout_set       │
+                    ▼ 1       │ N            │
+   muscle_group ──< exercise ─┤             (workout_session.program_day_id)
+        1        N   ▲ 1      │ N
+                     │        ▼ 1
+                     │   personal_record  (1:1 por ejercicio, vía UNIQUE)
+                     │        │
+                     └────────┘  (personal_record.exercise_id → exercise.id;
+                                  personal_record.set_id → workout_set.id)
+
+   audit_log         → tabla independiente, sin FKs (preserva el historial aunque
+                       se borren registros de origen). Poblada por triggers.
+   active_program     → tabla de control de fila única (program_id, day_id).
+   guide_article      → tabla independiente de contenido informativo.
 ```
+
+**Relaciones (claves foráneas):**
+
+| Tabla hija (FK) | Columna | Tabla padre | Regla ON DELETE |
+|-----------------|---------|-------------|-----------------|
+| `exercise` | `muscle_group_id` | `muscle_group` | RESTRICT |
+| `program_day` | `program_id` | `program` | CASCADE |
+| `routine_exercise` | `program_day_id` | `program_day` | CASCADE |
+| `routine_exercise` | `exercise_id` | `exercise` | RESTRICT |
+| `workout_session` | `program_day_id` | `program_day` | SET NULL |
+| `workout_set` | `session_id` | `workout_session` | CASCADE |
+| `workout_set` | `exercise_id` | `exercise` | RESTRICT |
+| `personal_record` | `exercise_id` | `exercise` | CASCADE (UNIQUE → 1:1) |
+| `personal_record` | `set_id` | `workout_set` | SET NULL |
+
+`audit_log`, `guide_article` y `active_program` no participan en la malla de FKs de dominio: `audit_log` es deliberadamente independiente para conservar la trazabilidad, y `active_program` es estado de sesión de la aplicación.
+
+---
+
+## 5. Resumen de Implementación SQL
+
+El proyecto implementa todos los requerimientos de manipulación y programación SQL avanzada del curso:
+
+| Componente | Cantidad | Archivo | Ejemplos |
+|-----------|:--------:|---------|----------|
+| Tablas | 11 | `01_ddl.sql` (+ `active_program`) | `workout_set`, `personal_record`, `audit_log` |
+| Datos seed | 10 músculos, 51 ejercicios, 3 programas (15 días), 6 guías | `02_seed.sql` | Splits recomendados por su efectividad |
+| Consultas avanzadas | 10 | `04_queries.sql` | CTE, `LAG()`, `RANK()`, self-join, running total |
+| Vistas | 9 | `05_views.sql` | `v_current_prs`, `v_exercise_progress`, `v_session_summary` |
+| Índices | 15 | `06_indexes.sql` | B-tree, compuestos, parciales (`WHERE is_pr`), en expresión (`LOWER(name)`) |
+| Procedimientos almacenados | 5 | `07_procedures.sql` | `sp_log_set`, `sp_start_session`, `sp_weekly_digest` |
+| Funciones UDF | 6 | `08_functions.sql` | Escalares (`fn_epley_1rm`) y tipo tabla (`fn_exercise_history`) |
+| Triggers | 6 | `09_triggers.sql` | Validación, cálculo de 1RM, detección de PR, auditoría |
+
+Todos estos objetos están conectados a comandos del CLI de GymOps; el mapeo detallado por fase (con el código SQL de cada uno) se documenta en `manual_usuario.md`.
 
 ---
 

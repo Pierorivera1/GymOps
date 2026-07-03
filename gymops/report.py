@@ -8,7 +8,12 @@ This file is published as a GitHub Actions artifact named 'ci-workout-digest'.
 from datetime import date, timedelta
 from pathlib import Path
 
-from gymops.db import get_all_prs, get_weekly_digest_stats
+from gymops.db import (
+    get_all_prs,
+    get_weekly_digest_sp,
+    get_weekly_digest_stats,
+    get_weekly_digest_view,
+)
 
 
 def generate_digest(days: int = 7, output_dir: Path = Path(".")) -> str:
@@ -59,6 +64,50 @@ def generate_digest(days: int = 7, output_dir: Path = Path(".")) -> str:
         lines.append(
             f"| {item['exercise_name']} | {item['sets_logged']} | {item['best_weight']:.1f} | {item['best_1rm']:.1f} |"
         )
+
+    # Weekly per-muscle summary (stored procedure sp_weekly_digest)
+    muscle_week = get_weekly_digest_sp()
+    lines += [
+        "",
+        "---",
+        "",
+        "## 💪 This Week by Muscle Group",
+        "",
+    ]
+    if muscle_week:
+        lines += [
+            "| Muscle | Sessions | Sets | Volume (kg) | PRs | Top Exercise |",
+            "|:-------|---------:|-----:|------------:|----:|:-------------|",
+        ]
+        for m in muscle_week:
+            lines.append(
+                f"| {m['muscle_group']} | {m['sessions_count']} | {m['total_sets']} | "
+                f"{float(m['total_volume_kg']):.1f} | {m['prs_in_week']} | {m['top_exercise'] or '—'} |"
+            )
+    else:
+        lines.append("_No closed sessions this week._")
+
+    # Recent weeks overview (view v_weekly_digest)
+    recent_weeks = get_weekly_digest_view(weeks=4)
+    lines += [
+        "",
+        "---",
+        "",
+        "## 📅 Recent Weeks Overview",
+        "",
+    ]
+    if recent_weeks:
+        lines += [
+            "| Week | Muscle | Sets | Volume (kg) | Best 1RM (kg) | PRs |",
+            "|:-----|:-------|-----:|------------:|--------------:|----:|",
+        ]
+        for w in recent_weeks:
+            lines.append(
+                f"| {w['semana_inicio']} | {w['musculo']} | {w['total_series']} | "
+                f"{float(w['volumen_kg']):.1f} | {float(w['mejor_1rm_semana']):.1f} | {w['prs_semana']} |"
+            )
+    else:
+        lines.append("_No workout data in the last 4 weeks._")
 
     lines += [
         "",

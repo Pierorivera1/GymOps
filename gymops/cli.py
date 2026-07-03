@@ -16,6 +16,13 @@ Commands:
     history        — View workout history for an exercise
     prs            — Show all personal records
     digest         — Generate weekly Markdown report
+    sessions       — Summary of recent workout sessions (v_session_summary)
+    progress       — 1RM progression over time (v_exercise_progress)
+    muscle-volume  — Weekly volume per muscle (v_muscle_volume_week / fn_weekly_volume)
+    list-exercises — Exercise catalog with usage stats (v_exercise_catalog)
+    show-program   — Full program structure (v_program_overview)
+    pr-timeline    — Chronological PR history (v_pr_timeline)
+    exercise-stats — Full exercise metrics (sp_get_exercise_stats)
     set-language   — Choose display language: en (English) or es (Español)
 """
 
@@ -522,6 +529,112 @@ def digest(
     console.print(
         Panel(content, title=f"[bold]{t('digest_title')}[/]", border_style="cyan")
     )
+
+
+# ---------------------------------------------------------------------------
+# Report commands (vistas y SPs de las fases 3, 5 y 6)
+# ---------------------------------------------------------------------------
+
+def _print_rows(rows: list[dict], title: str) -> None:
+    """Render a list of dict rows as a Rich table (columns from dict keys)."""
+    from rich.table import Table
+    import rich.box as box
+
+    if not rows:
+        console.print("[dim]No data found.[/dim]")
+        return
+
+    table = Table(title=f"[cyan]{title}[/]", box=box.ROUNDED, border_style="cyan", show_lines=True)
+    for key in rows[0].keys():
+        table.add_column(str(key).replace("_", " ").title())
+    for row in rows:
+        table.add_row(*("" if v is None else str(v) for v in row.values()))
+    console.print(table)
+
+
+@app.command()
+def sessions(
+    limit: int = typer.Option(20, "--limit", "-l", help="Number of sessions to show."),
+) -> None:
+    """Show the summary of recent workout sessions (view v_session_summary)."""
+    from gymops import db
+
+    _print_rows(db.get_session_summaries(limit), "🗓️  Session Summary")
+
+
+@app.command()
+def progress(
+    exercise: str = typer.Option(..., "--exercise", "-e", help="Exercise name."),
+) -> None:
+    """Show 1RM progression over time for an exercise (view v_exercise_progress)."""
+    from gymops import db
+
+    try:
+        rows = db.get_exercise_progress(exercise)
+    except ValueError as e:
+        console.print(f"[bright_red]{t('error_prefix')}[/] {e}")
+        raise typer.Exit(code=1)
+    _print_rows(rows, f"📈 Progress — {exercise}")
+
+
+@app.command(name="muscle-volume")
+def muscle_volume(
+    week: str = typer.Option(
+        None, "--week", help="Monday of a specific week (YYYY-MM-DD). Default: last 8 weeks."
+    ),
+) -> None:
+    """Show weekly training volume per muscle group (view v_muscle_volume_week / function fn_weekly_volume)."""
+    from gymops import db
+
+    if week:
+        _print_rows(db.get_weekly_volume(week), f"💪 Weekly Volume — week of {week}")
+    else:
+        _print_rows(db.get_muscle_volume_weeks(), "💪 Muscle Volume — last 8 weeks")
+
+
+@app.command(name="list-exercises")
+def list_exercises() -> None:
+    """List the exercise catalog with usage stats (view v_exercise_catalog)."""
+    from gymops import db
+
+    _print_rows(db.get_exercise_catalog(), "📚 Exercise Catalog")
+
+
+@app.command(name="show-program")
+def show_program(
+    program_name: str = typer.Argument(..., help="Name of the program to inspect."),
+) -> None:
+    """Show the full structure of a program: days, exercises and targets (view v_program_overview)."""
+    from gymops import db
+
+    rows = db.get_program_overview(program_name)
+    if not rows:
+        console.print(f"[bright_red]{t('error_prefix')}[/] Program '{program_name}' not found.")
+        raise typer.Exit(code=1)
+    _print_rows(rows, f"🏋️  Program — {rows[0]['programa']}")
+
+
+@app.command(name="pr-timeline")
+def pr_timeline() -> None:
+    """Show the chronological timeline of all PRs achieved (view v_pr_timeline)."""
+    from gymops import db
+
+    _print_rows(db.get_pr_timeline(), "🏆 PR Timeline")
+
+
+@app.command(name="exercise-stats")
+def exercise_stats(
+    exercise: str = typer.Option(..., "--exercise", "-e", help="Exercise name."),
+) -> None:
+    """Show full metrics for an exercise (stored procedure sp_get_exercise_stats)."""
+    from gymops import db
+
+    try:
+        rows = db.get_exercise_stats(exercise)
+    except ValueError as e:
+        console.print(f"[bright_red]{t('error_prefix')}[/] {e}")
+        raise typer.Exit(code=1)
+    _print_rows(rows, f"📊 Exercise Stats — {exercise}")
 
 
 # ---------------------------------------------------------------------------
