@@ -43,8 +43,11 @@ de entrega académica). Ver `.gitignore`:
 - `INSTRUCCIONES.md` — notas de trabajo del usuario para dirigirme en sesiones
 
 ## Inventario de objetos SQL (verificado contra la BD real)
-11 tablas (incluye `guide_article`, `active_program`) · 9 vistas · 15 índices ·
-5 procedimientos almacenados · 6 funciones UDF · 6 triggers.
+11 tablas (incluye `guide_article`, `active_program`, ambas ya en `01_ddl.sql`) ·
+9 vistas (`v_current_prs` es actualizable vía trigger INSTEAD OF) · 15 índices ·
+5 rutinas `sp_*` (CREATE FUNCTION, invocadas con SELECT) · 2 procedimientos
+`prc_*` (CREATE PROCEDURE, invocados con CALL) · 6 funciones UDF ·
+7 triggers (6 sobre tablas + 1 INSTEAD OF sobre la vista).
 
 **Todos los objetos SQL están conectados a un comando del CLI** — no hay vistas,
 SPs ni funciones huérfanas. Las únicas excepciones intencionales, sin comando

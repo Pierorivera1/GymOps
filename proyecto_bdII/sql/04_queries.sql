@@ -95,7 +95,7 @@ WITH sesiones_por_ejercicio AS (
         MAX(ws.estimated_1rm)               AS mejor_1rm,
         ROW_NUMBER() OVER (
             PARTITION BY ex.name
-            ORDER BY sess.started_at DESC
+            ORDER BY sess.started_at::date DESC
         )                                   AS n_sesion
     FROM workout_set ws
     JOIN exercise        ex   ON ws.exercise_id = ex.id

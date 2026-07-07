@@ -6,7 +6,7 @@
 -- =============================================================================
 -- Cubre:
 --   - Vistas para reportes y análisis
---   - Vistas actualizables (INSTEAD OF con RULE)
+--   - Vista actualizable (trigger INSTEAD OF UPDATE sobre v_current_prs)
 --   - Vistas sobre múltiples tablas
 --   - Vistas de seguridad (proyección de columnas sensibles)
 -- =============================================================================
@@ -162,7 +162,49 @@ LEFT JOIN workout_session sess ON ws.session_id = sess.id
 ORDER BY mg.name, pr.max_1rm DESC;
 
 COMMENT ON VIEW v_current_prs IS
-'Vista de PRs actuales por ejercicio. Muestra 1RM, peso, reps y fecha de logro.';
+'Vista actualizable de PRs actuales por ejercicio. Muestra 1RM, peso, reps y fecha. '
+'Un trigger INSTEAD OF UPDATE redirige correcciones de 1rm_max_kg/fecha_pr a personal_record.';
+
+-- -----------------------------------------------------------------------------
+-- Vista actualizable: al ser un JOIN de 5 tablas, PostgreSQL no la considera
+-- automáticamente actualizable, por lo que se define un trigger INSTEAD OF
+-- (mecanismo moderno que reemplaza a las antiguas CREATE RULE ... DO INSTEAD).
+-- Permite corregir manualmente el 1RM o la fecha de un PR a través de la vista:
+--   UPDATE v_current_prs SET "1rm_max_kg" = 150.00 WHERE ejercicio = 'Bench Press';
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_trg_update_current_prs()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW."1rm_max_kg" IS NULL OR NEW."1rm_max_kg" <= 0 THEN
+        RAISE EXCEPTION 'v_current_prs: 1rm_max_kg debe ser > 0. Recibido: %', NEW."1rm_max_kg"
+            USING ERRCODE = 'check_violation';
+    END IF;
+
+    UPDATE personal_record
+    SET max_1rm     = NEW."1rm_max_kg",
+        achieved_at = COALESCE(NEW.fecha_pr::timestamp, achieved_at)
+    WHERE id = OLD.pr_id;
+
+    RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION fn_trg_update_current_prs() IS
+    'Función trigger INSTEAD OF UPDATE de v_current_prs: redirige la modificación '
+    'de 1rm_max_kg y fecha_pr hacia la tabla base personal_record.';
+
+DROP TRIGGER IF EXISTS trg_update_current_prs ON v_current_prs;
+
+CREATE TRIGGER trg_update_current_prs
+    INSTEAD OF UPDATE ON v_current_prs
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_trg_update_current_prs();
+
+COMMENT ON TRIGGER trg_update_current_prs ON v_current_prs IS
+    'Hace actualizable a v_current_prs: los UPDATE sobre la vista se traducen '
+    'en UPDATE sobre personal_record (INSTEAD OF, sucesor de las RULEs).';
 
 
 -- =============================================================================

@@ -6,6 +6,8 @@
 -- =============================================================================
 
 -- Eliminar tablas si existen (orden inverso de dependencias)
+DROP TABLE IF EXISTS guide_article       CASCADE;
+DROP TABLE IF EXISTS active_program      CASCADE;
 DROP TABLE IF EXISTS audit_log           CASCADE;
 DROP TABLE IF EXISTS personal_record     CASCADE;
 DROP TABLE IF EXISTS workout_set         CASCADE;
@@ -174,6 +176,18 @@ CREATE TABLE guide_article (
 
 COMMENT ON TABLE  guide_article            IS 'Guías y artículos informativos sobre entrenamiento y fitness';
 COMMENT ON COLUMN guide_article.content_md IS 'Contenido en formato Markdown para renderizado enriquecido';
+
+-- =============================================================================
+-- 11. ACTIVE_PROGRAM — Programa activo del usuario (singleton)
+-- =============================================================================
+CREATE TABLE active_program (
+    id          INT PRIMARY KEY CHECK (id = 1),
+    program_id  INT REFERENCES program(id)     ON DELETE SET NULL,
+    day_id      INT REFERENCES program_day(id) ON DELETE SET NULL
+);
+
+COMMENT ON TABLE  active_program            IS 'Programa actualmente activo (fila única, id = 1)';
+COMMENT ON COLUMN active_program.day_id     IS 'Próximo día del programa a entrenar';
 
 -- =============================================================================
 -- Verificación final

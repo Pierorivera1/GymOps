@@ -229,14 +229,14 @@ El proyecto implementa todos los requerimientos de manipulación y programación
 
 | Componente | Cantidad | Archivo | Ejemplos |
 |-----------|:--------:|---------|----------|
-| Tablas | 11 | `01_ddl.sql` (+ `active_program`) | `workout_set`, `personal_record`, `audit_log` |
+| Tablas | 11 | `01_ddl.sql` | `workout_set`, `personal_record`, `audit_log`, `active_program` |
 | Datos seed | 10 músculos, 51 ejercicios, 3 programas (15 días), 6 guías | `02_seed.sql` | Splits recomendados por su efectividad |
 | Consultas avanzadas | 10 | `04_queries.sql` | CTE, `LAG()`, `RANK()`, self-join, running total |
-| Vistas | 9 | `05_views.sql` | `v_current_prs`, `v_exercise_progress`, `v_session_summary` |
+| Vistas | 9 (1 actualizable) | `05_views.sql` | `v_current_prs` (actualizable vía trigger INSTEAD OF), `v_exercise_progress`, `v_session_summary` |
 | Índices | 15 | `06_indexes.sql` | B-tree, compuestos, parciales (`WHERE is_pr`), en expresión (`LOWER(name)`) |
-| Procedimientos almacenados | 5 | `07_procedures.sql` | `sp_log_set`, `sp_start_session`, `sp_weekly_digest` |
+| Procedimientos almacenados | 5 rutinas `sp_*` + 2 procedimientos `prc_*` | `07_procedures.sql` | `sp_log_set` (FUNCTION/SELECT), `prc_recalc_personal_records` (PROCEDURE/CALL) |
 | Funciones UDF | 6 | `08_functions.sql` | Escalares (`fn_epley_1rm`) y tipo tabla (`fn_exercise_history`) |
-| Triggers | 6 | `09_triggers.sql` | Validación, cálculo de 1RM, detección de PR, auditoría |
+| Triggers | 7 | `09_triggers.sql` (+1 en `05_views.sql`) | Validación, cálculo de 1RM, detección de PR, auditoría, INSTEAD OF sobre vista |
 
 Todos estos objetos están conectados a comandos del CLI de GymOps; el mapeo detallado por fase (con el código SQL de cada uno) se documenta en el manual de usuario entregado al curso.
 

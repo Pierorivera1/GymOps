@@ -44,9 +44,9 @@ FROM exercise, (VALUES
     ('Overhead Press',            1, 8, 45.0),
     ('Overhead Press',            2, 7, 45.0),
     ('Overhead Press',            3, 7, 45.0),
-    ('Pull Up',                   1, 8, 0.0),
-    ('Pull Up',                   2, 6, 0.0),
-    ('Pull Up',                   3, 6, 0.0)
+    ('Pull Up',                   1, 8, 75.0),
+    ('Pull Up',                   2, 6, 75.0),
+    ('Pull Up',                   3, 6, 75.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -110,9 +110,9 @@ FROM exercise, (VALUES
     ('Overhead Press',            1, 8, 47.5),
     ('Overhead Press',            2, 8, 47.5),
     ('Overhead Press',            3, 7, 47.5),
-    ('Pull Up',                   1, 9, 0.0),
-    ('Pull Up',                   2, 8, 0.0),
-    ('Pull Up',                   3, 7, 0.0),
+    ('Pull Up',                   1, 9, 75.0),
+    ('Pull Up',                   2, 8, 75.0),
+    ('Pull Up',                   3, 7, 75.0),
     ('Incline Barbell Bench Press', 1, 10, 55.0),
     ('Incline Barbell Bench Press', 2, 10, 55.0),
     ('Incline Barbell Bench Press', 3, 9,  55.0)
@@ -267,9 +267,9 @@ FROM exercise, (VALUES
     ('Overhead Press',            1, 8, 50.0, TRUE),
     ('Overhead Press',            2, 8, 50.0, FALSE),
     ('Overhead Press',            3, 7, 50.0, FALSE),
-    ('Pull Up',                   1, 10, 0.0, TRUE),
-    ('Pull Up',                   2, 9,  0.0, FALSE),
-    ('Pull Up',                   3, 8,  0.0, FALSE)
+    ('Pull Up',                   1, 10, 75.0, TRUE),
+    ('Pull Up',                   2, 9, 75.0, FALSE),
+    ('Pull Up',                   3, 8, 75.0, FALSE)
 ) AS d(ex_name, set_num, reps_val, weight_val, is_pr_val)
 WHERE exercise.name = d.ex_name;
 
@@ -299,9 +299,9 @@ FROM exercise, (VALUES
     ('Overhead Press',            1, 8, 50.0),
     ('Overhead Press',            2, 7, 50.0),
     ('Overhead Press',            3, 7, 50.0),
-    ('Pull Up',                   1, 9,  0.0),
-    ('Pull Up',                   2, 9,  0.0),
-    ('Pull Up',                   3, 8,  0.0),
+    ('Pull Up',                   1, 9, 75.0),
+    ('Pull Up',                   2, 9, 75.0),
+    ('Pull Up',                   3, 8, 75.0),
     ('Incline Barbell Bench Press', 1, 10, 60.0),
     ('Incline Barbell Bench Press', 2, 10, 60.0),
     ('Incline Barbell Bench Press', 3, 9,  60.0)
@@ -334,9 +334,9 @@ FROM exercise, (VALUES
     ('Overhead Press',            1, 8, 52.5, TRUE),
     ('Overhead Press',            2, 8, 52.5, FALSE),
     ('Overhead Press',            3, 6, 52.5, FALSE),
-    ('Pull Up',                   1, 10, 0.0, FALSE),
-    ('Pull Up',                   2, 10, 0.0, FALSE),
-    ('Pull Up',                   3, 9,  0.0, FALSE),
+    ('Pull Up',                   1, 10, 75.0, FALSE),
+    ('Pull Up',                   2, 10, 75.0, FALSE),
+    ('Pull Up',                   3, 9, 75.0, FALSE),
     ('Incline Barbell Bench Press', 1, 10, 62.5, TRUE),
     ('Incline Barbell Bench Press', 2, 10, 62.5, FALSE),
     ('Incline Barbell Bench Press', 3, 9,  62.5, FALSE)

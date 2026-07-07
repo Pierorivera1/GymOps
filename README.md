@@ -153,11 +153,11 @@ GymOps corre sobre **PostgreSQL 16** (Docker). El esquema incluye:
 | Objeto | Cantidad | Descripción |
 |--------|----------|-------------|
 | Tablas | 11 | Esquema relacional en 3FN (con desnormalización controlada por triggers) |
-| Vistas | 9 | Reportes, seguridad y seguimiento de progreso |
+| Vistas | 9 (1 actualizable) | Reportes, seguridad y seguimiento de progreso |
 | Índices | 15 | Índices B-tree, parciales y de expresión |
-| Procedimientos almacenados | 5 | Gestión de sesiones, log de sets, detección de PRs |
+| Procedimientos almacenados | 5 `sp_*` + 2 `prc_*` (CALL) | Gestión de sesiones, log de sets, detección de PRs, mantenimiento |
 | Funciones (UDF) | 6 | Fórmula Epley, volumen, historial por ejercicio |
-| Triggers | 6 | Cálculo automático de 1RM, auditoría, validaciones |
+| Triggers | 7 | Cálculo automático de 1RM, auditoría, validaciones, INSTEAD OF sobre vista |
 
 ### Scripts SQL (`proyecto_bdII/sql/`)
 
@@ -167,9 +167,9 @@ GymOps corre sobre **PostgreSQL 16** (Docker). El esquema incluye:
 | `02_seed.sql` | Datos iniciales: músculos, 51 ejercicios, 3 programas predeterminados |
 | `03_dml.sql` | DML: sesiones, series, ejemplos de UPDATE/DELETE |
 | `04_queries.sql` | 10 consultas avanzadas (CTE, funciones de ventana, RANK, LAG) |
-| `05_views.sql` | 9 vistas para reportes y seguridad |
+| `05_views.sql` | 9 vistas para reportes y seguridad; `v_current_prs` actualizable vía trigger INSTEAD OF |
 | `06_indexes.sql` | 15 índices + planes EXPLAIN ANALYZE |
-| `07_procedures.sql` | 5 procedimientos almacenados en PL/pgSQL |
+| `07_procedures.sql` | 5 rutinas `sp_*` (FUNCTION/SELECT) + 2 procedimientos `prc_*` (PROCEDURE/CALL) |
 | `08_functions.sql` | 6 funciones escalares y tipo tabla |
 | `09_triggers.sql` | 6 triggers de auditoría, cálculo automático y validación |
 

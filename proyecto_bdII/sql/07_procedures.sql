@@ -11,6 +11,12 @@
 --   SP-03  sp_close_session(p_session_id)
 --   SP-04  sp_get_exercise_stats(p_exercise_id)
 --   SP-05  sp_weekly_digest(p_week_date)
+--
+-- Nota sobre FUNCTION vs PROCEDURE:
+--   Los SP-01..SP-05 usan CREATE FUNCTION ... RETURNS TABLE (idiomático en
+--   PostgreSQL para rutinas que devuelven result sets, invocadas con SELECT).
+--   Los PRC-01 y PRC-02 (al final) usan CREATE PROCEDURE + CALL, la sintaxis
+--   de procedimiento almacenado del estándar SQL, con parámetros INOUT.
 -- =============================================================================
 
 
@@ -155,7 +161,12 @@ BEGIN
     -- -------------------------------------------------------------------------
 
     -- Fórmula Epley: 1RM = weight * (1 + reps / 30.0)
-    v_1rm    := ROUND(p_weight_kg * (1.0 + p_reps::NUMERIC / 30.0), 2);
+    -- Con 1 rep el 1RM ES el peso levantado (misma regla que fn_epley_1rm y TRG-03)
+    IF p_reps = 1 THEN
+        v_1rm := ROUND(p_weight_kg, 2);
+    ELSE
+        v_1rm := ROUND(p_weight_kg * (1.0 + p_reps::NUMERIC / 30.0), 2);
+    END IF;
 
     -- Volumen del set: weight * reps
     v_volume := ROUND(p_weight_kg * p_reps, 2);
@@ -544,6 +555,73 @@ COMMENT ON FUNCTION sp_weekly_digest(DATE) IS
 
 
 -- =============================================================================
+-- PRC-01: prc_recalc_personal_records  (CREATE PROCEDURE / CALL)
+-- Descripción : Reconstruye la tabla personal_record completa a partir del
+--               historial real de workout_set. Útil tras correcciones manuales
+--               de sets (repara PRs inconsistentes).
+-- Uso         : CALL prc_recalc_personal_records();
+-- =============================================================================
+CREATE OR REPLACE PROCEDURE prc_recalc_personal_records()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_count INT;
+BEGIN
+    DELETE FROM personal_record;
+
+    INSERT INTO personal_record (exercise_id, max_1rm, achieved_at, set_id)
+    SELECT DISTINCT ON (ws.exercise_id)
+        ws.exercise_id,
+        ws.estimated_1rm,
+        ws.logged_at,
+        ws.id
+    FROM workout_set ws
+    WHERE ws.estimated_1rm IS NOT NULL
+    ORDER BY ws.exercise_id, ws.estimated_1rm DESC, ws.logged_at;
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RAISE NOTICE 'personal_record reconstruida: % PRs recalculados desde workout_set.', v_count;
+END;
+$$;
+
+COMMENT ON PROCEDURE prc_recalc_personal_records() IS
+    'PRC-01 (PROCEDURE/CALL): Reconstruye personal_record desde el historial de '
+    'workout_set. Repara PRs tras correcciones manuales de sets.';
+
+
+-- =============================================================================
+-- PRC-02: prc_purge_audit_log  (CREATE PROCEDURE / CALL con parámetro INOUT)
+-- Descripción : Elimina registros de audit_log más antiguos que N días y
+--               devuelve por el parámetro INOUT cuántos fueron eliminados.
+-- Parámetros  : p_days     INT           — antigüedad mínima a purgar (default 90)
+--               p_deleted  INT (INOUT)   — cantidad de filas eliminadas
+-- Uso         : CALL prc_purge_audit_log(90, NULL);
+-- =============================================================================
+CREATE OR REPLACE PROCEDURE prc_purge_audit_log(
+    p_days    INT DEFAULT 90,
+    INOUT p_deleted INT DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF p_days IS NULL OR p_days < 0 THEN
+        RAISE EXCEPTION 'prc_purge_audit_log: p_days debe ser >= 0. Recibido: %', p_days;
+    END IF;
+
+    DELETE FROM audit_log
+    WHERE changed_at < NOW() - MAKE_INTERVAL(days => p_days);
+
+    GET DIAGNOSTICS p_deleted = ROW_COUNT;
+    RAISE NOTICE 'audit_log: % registros con más de % días eliminados.', p_deleted, p_days;
+END;
+$$;
+
+COMMENT ON PROCEDURE prc_purge_audit_log(INT, INT) IS
+    'PRC-02 (PROCEDURE/CALL): Purga registros de audit_log más antiguos que p_days. '
+    'Devuelve el total eliminado mediante el parámetro INOUT p_deleted.';
+
+
+-- =============================================================================
 -- Verificación: listar los SPs creados
 -- =============================================================================
 SELECT
@@ -558,6 +636,8 @@ WHERE routine_schema = 'public'
       'sp_log_set',
       'sp_close_session',
       'sp_get_exercise_stats',
-      'sp_weekly_digest'
+      'sp_weekly_digest',
+      'prc_recalc_personal_records',
+      'prc_purge_audit_log'
   )
-ORDER BY routine_name;
+ORDER BY routine_type DESC, routine_name;

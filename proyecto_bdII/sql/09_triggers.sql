@@ -229,7 +229,7 @@ BEGIN
         SET is_pr = TRUE
         WHERE id = NEW.id;
 
-        RAISE NOTICE '[trg_update_pr] ¡Nuevo PR en ejercicio_id %! 1RM: %.2f kg (anterior: %)',
+        RAISE NOTICE '[trg_update_pr] ¡Nuevo PR en ejercicio_id %! 1RM: % kg (anterior: %)',
             NEW.exercise_id, v_1rm, COALESCE(v_current_pr::TEXT, 'ninguno');
     END IF;
 
@@ -374,7 +374,7 @@ BEGIN
             NOW()
         );
 
-        RAISE NOTICE '[trg_audit_pr] PR del ejercicio_id % actualizado: %.2f → %.2f kg',
+        RAISE NOTICE '[trg_audit_pr] PR del ejercicio_id % actualizado: % → % kg',
             NEW.exercise_id, OLD.max_1rm, NEW.max_1rm;
     END IF;
 
