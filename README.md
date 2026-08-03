@@ -16,7 +16,6 @@ El sistema recopila información y principios de entrenamiento basados en la cie
 2. Seleccionar la que mejor se adapte a su disponibilidad de tiempo y preferencias.
 3. Seguir de forma guiada los ejercicios, series y repeticiones recomendados para optimizar sus resultados.
 
-Todo funciona desde la terminal: sin apps en la nube, sin cuentas, sin distracciones. Inspirado en [lazygit](https://github.com/jesseduffield/lazygit) — la idea de que una buena herramienta de terminal no debe estorbarte, funcionar localmente y simplemente hacer su trabajo.
 
 ---
 
