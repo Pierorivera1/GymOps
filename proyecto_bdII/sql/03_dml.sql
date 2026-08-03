@@ -1,5 +1,5 @@
 -- =============================================================================
--- GymOps — Base de Datos II (FIEI)
+-- GymOps — Base de Datos II
 -- Script 03: DML — Manipulación de datos
 -- Gestor: PostgreSQL 16
 -- Autor: Piero Rivera
@@ -34,19 +34,19 @@ SELECT
     FALSE,
     NOW() - INTERVAL '42 days'
 FROM exercise, (VALUES
-    ('Barbell Bench Press',       1, 5, 70.0),
-    ('Barbell Bench Press',       2, 5, 70.0),
-    ('Barbell Bench Press',       3, 5, 70.0),
-    ('Barbell Bench Press',       4, 4, 70.0),
-    ('Barbell Row',               1, 5, 65.0),
-    ('Barbell Row',               2, 5, 65.0),
-    ('Barbell Row',               3, 5, 65.0),
-    ('Overhead Press',            1, 8, 45.0),
-    ('Overhead Press',            2, 7, 45.0),
-    ('Overhead Press',            3, 7, 45.0),
-    ('Pull Up',                   1, 8, 75.0),
-    ('Pull Up',                   2, 6, 75.0),
-    ('Pull Up',                   3, 6, 75.0)
+    ('Press de Banca con Barra',       1, 5, 70.0),
+    ('Press de Banca con Barra',       2, 5, 70.0),
+    ('Press de Banca con Barra',       3, 5, 70.0),
+    ('Press de Banca con Barra',       4, 4, 70.0),
+    ('Remo con Barra',               1, 5, 65.0),
+    ('Remo con Barra',               2, 5, 65.0),
+    ('Remo con Barra',               3, 5, 65.0),
+    ('Press Militar',            1, 8, 45.0),
+    ('Press Militar',            2, 7, 45.0),
+    ('Press Militar',            3, 7, 45.0),
+    ('Dominadas',                   1, 8, 75.0),
+    ('Dominadas',                   2, 6, 75.0),
+    ('Dominadas',                   3, 6, 75.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -66,21 +66,21 @@ SELECT
     FALSE,
     NOW() - INTERVAL '41 days'
 FROM exercise, (VALUES
-    ('Barbell Squat',             1, 5, 90.0),
-    ('Barbell Squat',             2, 5, 90.0),
-    ('Barbell Squat',             3, 5, 90.0),
-    ('Barbell Squat',             4, 3, 90.0),
-    ('Romanian Deadlift',         1, 8, 70.0),
-    ('Romanian Deadlift',         2, 8, 70.0),
-    ('Romanian Deadlift',         3, 8, 70.0),
-    ('Leg Press',                 1, 12, 140.0),
-    ('Leg Press',                 2, 12, 140.0),
-    ('Leg Press',                 3, 10, 140.0),
-    ('Leg Curl',                  1, 12, 35.0),
-    ('Leg Curl',                  2, 12, 35.0),
-    ('Standing Calf Raise',       1, 15, 60.0),
-    ('Standing Calf Raise',       2, 15, 60.0),
-    ('Standing Calf Raise',       3, 12, 60.0)
+    ('Sentadilla con Barra',             1, 5, 90.0),
+    ('Sentadilla con Barra',             2, 5, 90.0),
+    ('Sentadilla con Barra',             3, 5, 90.0),
+    ('Sentadilla con Barra',             4, 3, 90.0),
+    ('Peso Muerto Rumano',         1, 8, 70.0),
+    ('Peso Muerto Rumano',         2, 8, 70.0),
+    ('Peso Muerto Rumano',         3, 8, 70.0),
+    ('Prensa de Piernas',                 1, 12, 140.0),
+    ('Prensa de Piernas',                 2, 12, 140.0),
+    ('Prensa de Piernas',                 3, 10, 140.0),
+    ('Curl Femoral',                  1, 12, 35.0),
+    ('Curl Femoral',                  2, 12, 35.0),
+    ('Elevación de Talones de Pie',       1, 15, 60.0),
+    ('Elevación de Talones de Pie',       2, 15, 60.0),
+    ('Elevación de Talones de Pie',       3, 12, 60.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -100,22 +100,22 @@ SELECT
     FALSE,
     NOW() - INTERVAL '35 days'
 FROM exercise, (VALUES
-    ('Barbell Bench Press',       1, 5, 72.5),
-    ('Barbell Bench Press',       2, 5, 72.5),
-    ('Barbell Bench Press',       3, 5, 72.5),
-    ('Barbell Bench Press',       4, 5, 72.5),
-    ('Barbell Row',               1, 5, 67.5),
-    ('Barbell Row',               2, 5, 67.5),
-    ('Barbell Row',               3, 5, 67.5),
-    ('Overhead Press',            1, 8, 47.5),
-    ('Overhead Press',            2, 8, 47.5),
-    ('Overhead Press',            3, 7, 47.5),
-    ('Pull Up',                   1, 9, 75.0),
-    ('Pull Up',                   2, 8, 75.0),
-    ('Pull Up',                   3, 7, 75.0),
-    ('Incline Barbell Bench Press', 1, 10, 55.0),
-    ('Incline Barbell Bench Press', 2, 10, 55.0),
-    ('Incline Barbell Bench Press', 3, 9,  55.0)
+    ('Press de Banca con Barra',       1, 5, 72.5),
+    ('Press de Banca con Barra',       2, 5, 72.5),
+    ('Press de Banca con Barra',       3, 5, 72.5),
+    ('Press de Banca con Barra',       4, 5, 72.5),
+    ('Remo con Barra',               1, 5, 67.5),
+    ('Remo con Barra',               2, 5, 67.5),
+    ('Remo con Barra',               3, 5, 67.5),
+    ('Press Militar',            1, 8, 47.5),
+    ('Press Militar',            2, 8, 47.5),
+    ('Press Militar',            3, 7, 47.5),
+    ('Dominadas',                   1, 9, 75.0),
+    ('Dominadas',                   2, 8, 75.0),
+    ('Dominadas',                   3, 7, 75.0),
+    ('Press Inclinado con Barra', 1, 10, 55.0),
+    ('Press Inclinado con Barra', 2, 10, 55.0),
+    ('Press Inclinado con Barra', 3, 9,  55.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -135,23 +135,23 @@ SELECT
     FALSE,
     NOW() - INTERVAL '34 days'
 FROM exercise, (VALUES
-    ('Barbell Squat',             1, 5, 95.0),
-    ('Barbell Squat',             2, 5, 95.0),
-    ('Barbell Squat',             3, 5, 95.0),
-    ('Barbell Squat',             4, 4, 95.0),
-    ('Romanian Deadlift',         1, 8, 72.5),
-    ('Romanian Deadlift',         2, 8, 72.5),
-    ('Romanian Deadlift',         3, 7, 72.5),
-    ('Leg Press',                 1, 12, 150.0),
-    ('Leg Press',                 2, 12, 150.0),
-    ('Leg Press',                 3, 12, 150.0),
-    ('Leg Curl',                  1, 12, 37.5),
-    ('Leg Curl',                  2, 12, 37.5),
-    ('Leg Curl',                  3, 10, 37.5),
-    ('Standing Calf Raise',       1, 15, 65.0),
-    ('Standing Calf Raise',       2, 15, 65.0),
-    ('Standing Calf Raise',       3, 15, 65.0),
-    ('Standing Calf Raise',       4, 12, 65.0)
+    ('Sentadilla con Barra',             1, 5, 95.0),
+    ('Sentadilla con Barra',             2, 5, 95.0),
+    ('Sentadilla con Barra',             3, 5, 95.0),
+    ('Sentadilla con Barra',             4, 4, 95.0),
+    ('Peso Muerto Rumano',         1, 8, 72.5),
+    ('Peso Muerto Rumano',         2, 8, 72.5),
+    ('Peso Muerto Rumano',         3, 7, 72.5),
+    ('Prensa de Piernas',                 1, 12, 150.0),
+    ('Prensa de Piernas',                 2, 12, 150.0),
+    ('Prensa de Piernas',                 3, 12, 150.0),
+    ('Curl Femoral',                  1, 12, 37.5),
+    ('Curl Femoral',                  2, 12, 37.5),
+    ('Curl Femoral',                  3, 10, 37.5),
+    ('Elevación de Talones de Pie',       1, 15, 65.0),
+    ('Elevación de Talones de Pie',       2, 15, 65.0),
+    ('Elevación de Talones de Pie',       3, 15, 65.0),
+    ('Elevación de Talones de Pie',       4, 12, 65.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -171,33 +171,33 @@ SELECT
     FALSE,
     NOW() - INTERVAL '28 days'
 FROM exercise, (VALUES
-    ('Incline Barbell Bench Press', 1, 10, 57.5),
-    ('Incline Barbell Bench Press', 2, 10, 57.5),
-    ('Incline Barbell Bench Press', 3, 9,  57.5),
-    ('Incline Barbell Bench Press', 4, 8,  57.5),
-    ('Lat Pulldown',              1, 10, 55.0),
-    ('Lat Pulldown',              2, 10, 55.0),
-    ('Lat Pulldown',              3, 10, 55.0),
-    ('Lat Pulldown',              4, 9,  55.0),
-    ('Dumbbell Shoulder Press',   1, 12, 20.0),
-    ('Dumbbell Shoulder Press',   2, 12, 20.0),
-    ('Dumbbell Shoulder Press',   3, 10, 20.0),
-    ('Seated Cable Row',          1, 12, 50.0),
-    ('Seated Cable Row',          2, 12, 50.0),
-    ('Seated Cable Row',          3, 12, 50.0),
-    ('Cable Fly',                 1, 15, 12.0),
-    ('Cable Fly',                 2, 15, 12.0),
-    ('Cable Fly',                 3, 15, 12.0),
-    ('Lateral Raise',             1, 15, 10.0),
-    ('Lateral Raise',             2, 15, 10.0),
-    ('Lateral Raise',             3, 15, 10.0),
-    ('Lateral Raise',             4, 12, 10.0),
-    ('Barbell Curl',              1, 10, 30.0),
-    ('Barbell Curl',              2, 10, 30.0),
-    ('Barbell Curl',              3, 10, 30.0),
-    ('Tricep Pushdown',           1, 12, 22.5),
-    ('Tricep Pushdown',           2, 12, 22.5),
-    ('Tricep Pushdown',           3, 12, 22.5)
+    ('Press Inclinado con Barra', 1, 10, 57.5),
+    ('Press Inclinado con Barra', 2, 10, 57.5),
+    ('Press Inclinado con Barra', 3, 9,  57.5),
+    ('Press Inclinado con Barra', 4, 8,  57.5),
+    ('Jalón al Pecho',              1, 10, 55.0),
+    ('Jalón al Pecho',              2, 10, 55.0),
+    ('Jalón al Pecho',              3, 10, 55.0),
+    ('Jalón al Pecho',              4, 9,  55.0),
+    ('Press de Hombros con Mancuernas',   1, 12, 20.0),
+    ('Press de Hombros con Mancuernas',   2, 12, 20.0),
+    ('Press de Hombros con Mancuernas',   3, 10, 20.0),
+    ('Remo Sentado en Polea',          1, 12, 50.0),
+    ('Remo Sentado en Polea',          2, 12, 50.0),
+    ('Remo Sentado en Polea',          3, 12, 50.0),
+    ('Aperturas en Polea',                 1, 15, 12.0),
+    ('Aperturas en Polea',                 2, 15, 12.0),
+    ('Aperturas en Polea',                 3, 15, 12.0),
+    ('Elevaciones Laterales',             1, 15, 10.0),
+    ('Elevaciones Laterales',             2, 15, 10.0),
+    ('Elevaciones Laterales',             3, 15, 10.0),
+    ('Elevaciones Laterales',             4, 12, 10.0),
+    ('Curl con Barra',              1, 10, 30.0),
+    ('Curl con Barra',              2, 10, 30.0),
+    ('Curl con Barra',              3, 10, 30.0),
+    ('Extensión de Tríceps en Polea',           1, 12, 22.5),
+    ('Extensión de Tríceps en Polea',           2, 12, 22.5),
+    ('Extensión de Tríceps en Polea',           3, 12, 22.5)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -217,27 +217,27 @@ SELECT
     FALSE,
     NOW() - INTERVAL '27 days'
 FROM exercise, (VALUES
-    ('Bulgarian Split Squat',     1, 10, 30.0),
-    ('Bulgarian Split Squat',     2, 10, 30.0),
-    ('Bulgarian Split Squat',     3, 9,  30.0),
-    ('Bulgarian Split Squat',     4, 8,  30.0),
-    ('Leg Press',                 1, 15, 160.0),
-    ('Leg Press',                 2, 15, 160.0),
-    ('Leg Press',                 3, 12, 160.0),
-    ('Leg Press',                 4, 12, 160.0),
-    ('Leg Extension',             1, 15, 40.0),
-    ('Leg Extension',             2, 15, 40.0),
-    ('Leg Extension',             3, 12, 40.0),
-    ('Leg Curl',                  1, 12, 40.0),
-    ('Leg Curl',                  2, 12, 40.0),
-    ('Leg Curl',                  3, 10, 40.0),
-    ('Hip Thrust',                1, 12, 80.0),
-    ('Hip Thrust',                2, 12, 80.0),
-    ('Hip Thrust',                3, 12, 80.0),
-    ('Seated Calf Raise',         1, 15, 45.0),
-    ('Seated Calf Raise',         2, 15, 45.0),
-    ('Seated Calf Raise',         3, 15, 45.0),
-    ('Seated Calf Raise',         4, 12, 45.0)
+    ('Sentadilla Búlgara',     1, 10, 30.0),
+    ('Sentadilla Búlgara',     2, 10, 30.0),
+    ('Sentadilla Búlgara',     3, 9,  30.0),
+    ('Sentadilla Búlgara',     4, 8,  30.0),
+    ('Prensa de Piernas',                 1, 15, 160.0),
+    ('Prensa de Piernas',                 2, 15, 160.0),
+    ('Prensa de Piernas',                 3, 12, 160.0),
+    ('Prensa de Piernas',                 4, 12, 160.0),
+    ('Extensión de Piernas',             1, 15, 40.0),
+    ('Extensión de Piernas',             2, 15, 40.0),
+    ('Extensión de Piernas',             3, 12, 40.0),
+    ('Curl Femoral',                  1, 12, 40.0),
+    ('Curl Femoral',                  2, 12, 40.0),
+    ('Curl Femoral',                  3, 10, 40.0),
+    ('Empuje de Cadera',                1, 12, 80.0),
+    ('Empuje de Cadera',                2, 12, 80.0),
+    ('Empuje de Cadera',                3, 12, 80.0),
+    ('Elevación de Talones Sentado',         1, 15, 45.0),
+    ('Elevación de Talones Sentado',         2, 15, 45.0),
+    ('Elevación de Talones Sentado',         3, 15, 45.0),
+    ('Elevación de Talones Sentado',         4, 12, 45.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -257,19 +257,19 @@ SELECT
     is_pr_val,
     NOW() - INTERVAL '21 days'
 FROM exercise, (VALUES
-    ('Barbell Bench Press',       1, 5, 77.5, FALSE),
-    ('Barbell Bench Press',       2, 5, 77.5, FALSE),
-    ('Barbell Bench Press',       3, 5, 80.0, TRUE),
-    ('Barbell Bench Press',       4, 4, 80.0, FALSE),
-    ('Barbell Row',               1, 5, 70.0, TRUE),
-    ('Barbell Row',               2, 5, 70.0, FALSE),
-    ('Barbell Row',               3, 5, 70.0, FALSE),
-    ('Overhead Press',            1, 8, 50.0, TRUE),
-    ('Overhead Press',            2, 8, 50.0, FALSE),
-    ('Overhead Press',            3, 7, 50.0, FALSE),
-    ('Pull Up',                   1, 10, 75.0, TRUE),
-    ('Pull Up',                   2, 9, 75.0, FALSE),
-    ('Pull Up',                   3, 8, 75.0, FALSE)
+    ('Press de Banca con Barra',       1, 5, 77.5, FALSE),
+    ('Press de Banca con Barra',       2, 5, 77.5, FALSE),
+    ('Press de Banca con Barra',       3, 5, 80.0, TRUE),
+    ('Press de Banca con Barra',       4, 4, 80.0, FALSE),
+    ('Remo con Barra',               1, 5, 70.0, TRUE),
+    ('Remo con Barra',               2, 5, 70.0, FALSE),
+    ('Remo con Barra',               3, 5, 70.0, FALSE),
+    ('Press Militar',            1, 8, 50.0, TRUE),
+    ('Press Militar',            2, 8, 50.0, FALSE),
+    ('Press Militar',            3, 7, 50.0, FALSE),
+    ('Dominadas',                   1, 10, 75.0, TRUE),
+    ('Dominadas',                   2, 9, 75.0, FALSE),
+    ('Dominadas',                   3, 8, 75.0, FALSE)
 ) AS d(ex_name, set_num, reps_val, weight_val, is_pr_val)
 WHERE exercise.name = d.ex_name;
 
@@ -289,22 +289,22 @@ SELECT
     FALSE,
     NOW() - INTERVAL '14 days'
 FROM exercise, (VALUES
-    ('Barbell Bench Press',       1, 5, 80.0),
-    ('Barbell Bench Press',       2, 5, 80.0),
-    ('Barbell Bench Press',       3, 4, 80.0),
-    ('Barbell Bench Press',       4, 4, 80.0),
-    ('Barbell Row',               1, 5, 72.5),
-    ('Barbell Row',               2, 5, 72.5),
-    ('Barbell Row',               3, 5, 72.5),
-    ('Overhead Press',            1, 8, 50.0),
-    ('Overhead Press',            2, 7, 50.0),
-    ('Overhead Press',            3, 7, 50.0),
-    ('Pull Up',                   1, 9, 75.0),
-    ('Pull Up',                   2, 9, 75.0),
-    ('Pull Up',                   3, 8, 75.0),
-    ('Incline Barbell Bench Press', 1, 10, 60.0),
-    ('Incline Barbell Bench Press', 2, 10, 60.0),
-    ('Incline Barbell Bench Press', 3, 9,  60.0)
+    ('Press de Banca con Barra',       1, 5, 80.0),
+    ('Press de Banca con Barra',       2, 5, 80.0),
+    ('Press de Banca con Barra',       3, 4, 80.0),
+    ('Press de Banca con Barra',       4, 4, 80.0),
+    ('Remo con Barra',               1, 5, 72.5),
+    ('Remo con Barra',               2, 5, 72.5),
+    ('Remo con Barra',               3, 5, 72.5),
+    ('Press Militar',            1, 8, 50.0),
+    ('Press Militar',            2, 7, 50.0),
+    ('Press Militar',            3, 7, 50.0),
+    ('Dominadas',                   1, 9, 75.0),
+    ('Dominadas',                   2, 9, 75.0),
+    ('Dominadas',                   3, 8, 75.0),
+    ('Press Inclinado con Barra', 1, 10, 60.0),
+    ('Press Inclinado con Barra', 2, 10, 60.0),
+    ('Press Inclinado con Barra', 3, 9,  60.0)
 ) AS d(ex_name, set_num, reps_val, weight_val)
 WHERE exercise.name = d.ex_name;
 
@@ -324,22 +324,22 @@ SELECT
     is_pr_val,
     NOW() - INTERVAL '7 days'
 FROM exercise, (VALUES
-    ('Barbell Bench Press',       1, 5, 80.0, FALSE),
-    ('Barbell Bench Press',       2, 5, 80.0, FALSE),
-    ('Barbell Bench Press',       3, 5, 82.5, TRUE),
-    ('Barbell Bench Press',       4, 3, 82.5, FALSE),
-    ('Barbell Row',               1, 5, 75.0, TRUE),
-    ('Barbell Row',               2, 5, 75.0, FALSE),
-    ('Barbell Row',               3, 5, 75.0, FALSE),
-    ('Overhead Press',            1, 8, 52.5, TRUE),
-    ('Overhead Press',            2, 8, 52.5, FALSE),
-    ('Overhead Press',            3, 6, 52.5, FALSE),
-    ('Pull Up',                   1, 10, 75.0, FALSE),
-    ('Pull Up',                   2, 10, 75.0, FALSE),
-    ('Pull Up',                   3, 9, 75.0, FALSE),
-    ('Incline Barbell Bench Press', 1, 10, 62.5, TRUE),
-    ('Incline Barbell Bench Press', 2, 10, 62.5, FALSE),
-    ('Incline Barbell Bench Press', 3, 9,  62.5, FALSE)
+    ('Press de Banca con Barra',       1, 5, 80.0, FALSE),
+    ('Press de Banca con Barra',       2, 5, 80.0, FALSE),
+    ('Press de Banca con Barra',       3, 5, 82.5, TRUE),
+    ('Press de Banca con Barra',       4, 3, 82.5, FALSE),
+    ('Remo con Barra',               1, 5, 75.0, TRUE),
+    ('Remo con Barra',               2, 5, 75.0, FALSE),
+    ('Remo con Barra',               3, 5, 75.0, FALSE),
+    ('Press Militar',            1, 8, 52.5, TRUE),
+    ('Press Militar',            2, 8, 52.5, FALSE),
+    ('Press Militar',            3, 6, 52.5, FALSE),
+    ('Dominadas',                   1, 10, 75.0, FALSE),
+    ('Dominadas',                   2, 10, 75.0, FALSE),
+    ('Dominadas',                   3, 9, 75.0, FALSE),
+    ('Press Inclinado con Barra', 1, 10, 62.5, TRUE),
+    ('Press Inclinado con Barra', 2, 10, 62.5, FALSE),
+    ('Press Inclinado con Barra', 3, 9,  62.5, FALSE)
 ) AS d(ex_name, set_num, reps_val, weight_val, is_pr_val)
 WHERE exercise.name = d.ex_name;
 
@@ -382,7 +382,7 @@ WHERE id = (
     SELECT ws.id FROM workout_set ws
     JOIN workout_session sess ON ws.session_id = sess.id
     JOIN exercise ex ON ws.exercise_id = ex.id
-    WHERE ex.name = 'Barbell Bench Press'
+    WHERE ex.name = 'Press de Banca con Barra'
       AND ws.set_number = 1
       AND sess.started_at < NOW() - INTERVAL '40 days'
     ORDER BY sess.started_at ASC
@@ -399,13 +399,13 @@ UPDATE routine_exercise
 SET reps_target  = '4-6',
     notes        = 'Ajustado a rango de fuerza pura por el entrenador'
 WHERE program_day_id = 1
-  AND exercise_id = (SELECT id FROM exercise WHERE name = 'Barbell Bench Press');
+  AND exercise_id = (SELECT id FROM exercise WHERE name = 'Press de Banca con Barra');
 
 -- C.4 Ajuste de descanso en Press Militar
 UPDATE routine_exercise
 SET rest_seconds = 150
 WHERE program_day_id = 1
-  AND exercise_id = (SELECT id FROM exercise WHERE name = 'Overhead Press');
+  AND exercise_id = (SELECT id FROM exercise WHERE name = 'Press Militar');
 
 
 -- =============================================================================
@@ -437,7 +437,7 @@ WHERE changed_at < NOW() - INTERVAL '90 days';
 
 -- E.1 Consulta parametrizada: historial reciente de un ejercicio
 --     ($1 = nombre del ejercicio, $2 = número de registros)
---     Equivalente en psycopg2: cursor.execute(query, ('Barbell Bench Press', 10))
+--     Equivalente en psycopg2: cursor.execute(query, ('Press de Banca con Barra', 10))
 SELECT
     ex.name                              AS ejercicio,
     ws.set_number                        AS serie,
@@ -450,7 +450,7 @@ SELECT
 FROM workout_set ws
 JOIN exercise ex     ON ws.exercise_id = ex.id
 JOIN workout_session sess ON ws.session_id = sess.id
-WHERE ex.name = 'Barbell Bench Press'   -- $1: parámetro del ejercicio
+WHERE ex.name = 'Press de Banca con Barra'   -- $1: parámetro del ejercicio
 ORDER BY ws.logged_at DESC
 LIMIT 10;                               -- $2: parámetro de límite
 

@@ -1,5 +1,5 @@
 -- =============================================================================
--- GymOps — Base de Datos II (FIEI)
+-- GymOps — Base de Datos II
 -- Script 09: Triggers (PL/pgSQL)
 -- Gestor: PostgreSQL 16
 -- Autor: Piero Rivera

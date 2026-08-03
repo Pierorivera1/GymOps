@@ -1,6 +1,6 @@
 # AGENTS.md
 
-## Proyecto: GymOps-FIEI
+## Proyecto: GymOps
 
 CLI de seguimiento de entrenamiento en Python, pero el propósito real es ser el
 **proyecto final de Base de Datos II (UNFV)**. El enfoque es demostrar uso avanzado

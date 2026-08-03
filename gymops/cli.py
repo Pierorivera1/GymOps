@@ -22,8 +22,9 @@ Commands:
     list-exercises — Exercise catalog with usage stats (v_exercise_catalog)
     show-program   — Full program structure (v_program_overview)
     pr-timeline    — Chronological PR history (v_pr_timeline)
-    exercise-stats — Full exercise metrics (sp_get_exercise_stats)
-    set-language   — Choose display language: en (English) or es (Español)
+    exercise-stats   — Full exercise metrics (sp_get_exercise_stats)
+    session-detail   — Set-by-set detail of a session via explicit cursor (prc_resumen_sesion_detallado)
+    set-language     — Choose display language: en (English) or es (Español)
 """
 
 import typer
@@ -299,11 +300,13 @@ def select_program(
     from gymops import db
 
     programs = db.get_all_programs()
-    target_program = None
-    for p in programs:
-        if p.name.lower() == program_name.lower():
-            target_program = p
-            break
+    query = program_name.lower()
+    target_program = next((p for p in programs if p.name.lower() == query), None)
+    if not target_program:
+        # ponytail: prefix match so "PPL" resuelve a "PPL (6-Day)"
+        matches = [p for p in programs if p.name.lower().startswith(query)]
+        if len(matches) == 1:
+            target_program = matches[0]
 
     if not target_program:
         console.print(f"[bright_red]{t('error_prefix')}[/] {t('selp_not_found', name=program_name)}")
@@ -337,11 +340,13 @@ def set_day(
 
     program_id = active["program_id"]
     p_days = db.get_program_days(program_id)
-    target_day = None
-    for d in p_days:
-        if d.name.lower() == day_name.lower():
-            target_day = d
-            break
+    query = day_name.lower()
+    target_day = next((d for d in p_days if d.name.lower() == query), None)
+    if not target_day:
+        # ponytail: prefix match so "Upper A" resuelve a "Upper A (Strength)"
+        matches = [d for d in p_days if d.name.lower().startswith(query)]
+        if len(matches) == 1:
+            target_day = matches[0]
 
     if not target_day:
         console.print(f"[bright_red]{t('error_prefix')}[/] {t('setday_not_found', name=day_name)}")
@@ -519,8 +524,11 @@ def digest(
     """Generate the weekly CI Workout Digest Markdown report."""
     from gymops.report import generate_digest
     from rich.panel import Panel
+    from pathlib import Path
 
-    output_file = generate_digest(days=days)
+    output_dir = Path.home() / "Downloads" / "Digests"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / generate_digest(days=days, output_dir=output_dir)
     content = (
         f"[dim]{t('digest_file')}[/]     [bold spring_green1]{output_file}[/]\n"
         f"[dim]{t('digest_days')}[/] {days} {t('digest_days_unit')}\n"
@@ -610,6 +618,12 @@ def show_program(
     rows = db.get_program_overview(program_name)
     if not rows:
         console.print(f"[bright_red]{t('error_prefix')}[/] Program '{program_name}' not found.")
+        # List available programs to help the user
+        all_programs = db.get_all_programs()
+        if all_programs:
+            console.print("\n[dim]Available programs:[/]")
+            for p in all_programs:
+                console.print(f"  [cyan]•[/] {p.name}")
         raise typer.Exit(code=1)
     _print_rows(rows, f"🏋️  Program — {rows[0]['programa']}")
 
@@ -635,6 +649,48 @@ def exercise_stats(
         console.print(f"[bright_red]{t('error_prefix')}[/] {e}")
         raise typer.Exit(code=1)
     _print_rows(rows, f"📊 Exercise Stats — {exercise}")
+
+
+# ---------------------------------------------------------------------------
+# gymops session-detail  (cursor explícito PRC-04)
+# ---------------------------------------------------------------------------
+
+@app.command(name="session-detail")
+def session_detail(
+    session_id: int = typer.Argument(..., help="ID of the session to inspect."),
+) -> None:
+    """Set-by-set detail of a session using an explicit cursor (prc_resumen_sesion_detallado)."""
+    from gymops import db
+    from rich.panel import Panel
+    from rich.rule import Rule
+
+    try:
+        notices = db.call_resumen_sesion_detallado(session_id)
+    except ValueError as e:
+        console.print(f"[bright_red]{t('error_prefix')}[/] {e}")
+        raise typer.Exit(code=1)
+
+    if not notices:
+        console.print(f"[dim]No output from session {session_id}.[/dim]")
+        return
+
+    console.print(Rule(f"[cyan]Session #{session_id} — Set Detail[/]", style="cyan"))
+    for line in notices:
+        # Highlight PR lines, separator lines and summary differently
+        if "PR!" in line:
+            console.print(f"  [gold1]{line}[/]")
+        elif line.startswith("═") or line.startswith("─"):
+            console.print(f"[dim]{line}[/]")
+        elif line.startswith("Total:"):
+            console.print(
+                Panel(line, border_style="spring_green1", padding=(0, 2))
+            )
+        elif line.startswith("La sesión") and "no tiene" in line:
+            console.print(f"[yellow]{line}[/]")
+        else:
+            console.print(f"  {line}")
+
+    console.print(f"\n[dim]Tip: run [cyan]gymops sessions[/] to find session IDs.[/dim]")
 
 
 # ---------------------------------------------------------------------------

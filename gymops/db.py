@@ -169,12 +169,30 @@ def format_day_name(name: str) -> str:
 
 def normalize_program_name(name: str) -> str:
     """
-    Translate SQLite program names to PostgreSQL seeded program names.
+    Translate English aliases and legacy SQLite names to the real program
+    names stored in PostgreSQL (which are in Spanish).
+
+    Both exact aliases and common shorthands are mapped so that the user
+    can write e.g. "Upper/Lower", "upper/lower 4-day", "PPL" or the full
+    Spanish name and always get the right DB record.
     """
     mapping = {
-        "upper/lower (4-day)": "Upper/Lower 4-Day",
-        "ppl (6-day)": "PPL 6-Day",
-        "ulppl (5-day)": "ULPPL 5-Day",
+        # English shorthands / legacy SQLite names → real Spanish BD names
+        "upper/lower":            "Superior/Inferior 4 Días",
+        "upper/lower 4-day":      "Superior/Inferior 4 Días",
+        "upper/lower (4-day)":    "Superior/Inferior 4 Días",
+        "upper/lower 4 days":     "Superior/Inferior 4 Días",
+        "superior/inferior":      "Superior/Inferior 4 Días",
+        "ppl":                    "Empuje/Tirón/Pierna 6 Días",
+        "ppl 6-day":              "Empuje/Tirón/Pierna 6 Días",
+        "ppl (6-day)":            "Empuje/Tirón/Pierna 6 Días",
+        "push pull legs":         "Empuje/Tirón/Pierna 6 Días",
+        "empuje/tirón/pierna":    "Empuje/Tirón/Pierna 6 Días",
+        "ulppl":                  "Híbrido UL+ETP 5 Días",
+        "ulppl 5-day":            "Híbrido UL+ETP 5 Días",
+        "ulppl (5-day)":          "Híbrido UL+ETP 5 Días",
+        "híbrido ul+etp":         "Híbrido UL+ETP 5 Días",
+        "hibrido ul+etp":         "Híbrido UL+ETP 5 Días",
     }
     return mapping.get(name.lower().strip(), name)
 
@@ -905,17 +923,73 @@ def get_exercise_catalog() -> list[dict]:
 
 
 def get_program_overview(program_name: str) -> list[dict]:
-    """Full program structure from the v_program_overview view."""
+    """
+    Full program structure from the v_program_overview view.
+
+    Resolution order (same flexible logic as select-program):
+      1. Exact match after alias normalization.
+      2. Prefix match against all program names in the DB (case-insensitive).
+    """
     normalized = normalize_program_name(program_name)
-    return fetch_all(
+
+    # 1. Try exact match (handles aliases + full Spanish name)
+    rows = fetch_all(
         "SELECT * FROM v_program_overview WHERE LOWER(programa) = LOWER(%s)",
         (normalized,),
     )
+    if rows:
+        return rows
+
+    # 2. Prefix match: retrieve all distinct program names and filter in Python
+    candidates = fetch_all("SELECT DISTINCT programa FROM v_program_overview ORDER BY programa")
+    query = normalized.lower()
+    prefix_matches = [r["programa"] for r in candidates if r["programa"].lower().startswith(query)]
+    if len(prefix_matches) == 1:
+        return fetch_all(
+            "SELECT * FROM v_program_overview WHERE LOWER(programa) = LOWER(%s)",
+            (prefix_matches[0],),
+        )
+
+    # No match found
+    return []
 
 
 def get_pr_timeline() -> list[dict]:
     """Chronological PR history from the v_pr_timeline view."""
     return fetch_all("SELECT * FROM v_pr_timeline")
+
+
+def call_resumen_sesion_detallado(session_id: int) -> list[str]:
+    """
+    Invoke prc_resumen_sesion_detallado(p_session_id) via CALL.
+
+    The procedure uses an explicit cursor (DECLARE/OPEN/FETCH/CLOSE) to
+    iterate every set in the session and emits one RAISE NOTICE per set plus
+    a summary notice at the end.
+
+    psycopg2 accumulates server NOTICE messages in conn.notices (a list of
+    strings). We drain that list after the CALL and return the notices so the
+    CLI can render them with Rich.
+    """
+    with get_connection() as conn:
+        # psycopg2 stores server notices here automatically
+        conn.notices.clear()
+
+        with conn.cursor() as cur:
+            # Verify the session exists before calling the procedure
+            cur.execute(
+                "SELECT id FROM workout_session WHERE id = %s", (session_id,)
+            )
+            if cur.fetchone() is None:
+                raise ValueError(f"Session {session_id} does not exist.")
+            cur.execute("CALL prc_resumen_sesion_detallado(%s)", (session_id,))
+
+        # Each entry in conn.notices is like: "NOTICE:  message text\n"
+        # Strip the "NOTICE:  " prefix and trailing whitespace for clean output.
+        return [
+            n.removeprefix("NOTICE:  ").rstrip()
+            for n in conn.notices
+        ]
 
 
 def get_exercise_stats(exercise_name: str) -> list[dict]:

@@ -1,5 +1,5 @@
 -- =============================================================================
--- GymOps — Base de Datos II (FIEI)
+-- GymOps — Base de Datos II
 -- Script 05: VISTAS
 -- Gestor: PostgreSQL 16
 -- Autor: Piero Rivera

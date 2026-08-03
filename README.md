@@ -55,8 +55,8 @@ Todo funciona desde la terminal: sin apps en la nube, sin cuentas, sin distracci
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/Pierorivera1/GymOps-FIEI.git
-cd GymOps-FIEI
+git clone https://github.com/Pierorivera1/GymOps.git
+cd GymOps
 
 # Iniciar PostgreSQL con Docker
 docker run --name gymops-db -e POSTGRES_USER=gymops \
@@ -299,7 +299,7 @@ Contraseña:    gymops_pass
 ## Estructura del proyecto
 
 ```
-GymOps-FIEI/
+GymOps/
 ├── gymops/
 │   ├── cli.py          # Todos los comandos Typer del CLI
 │   ├── db.py           # Capa de base de datos (PostgreSQL)

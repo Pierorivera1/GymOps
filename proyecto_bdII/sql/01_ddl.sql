@@ -1,5 +1,5 @@
 -- =============================================================================
--- GymOps — Base de Datos II (FIEI)
+-- GymOps — Base de Datos II
 -- Script 01: DDL — Definición de estructura de la base de datos
 -- Gestor: PostgreSQL 16
 -- Autor: Piero Rivera , Ore Christian , Fabian Gaspar , Alessandro Rosas , Franz Jimenez

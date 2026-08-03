@@ -1,5 +1,5 @@
 -- =============================================================================
--- GymOps — Base de Datos II (FIEI)
+-- GymOps — Base de Datos II
 -- Script 07: Procedimientos Almacenados (PL/pgSQL)
 -- Gestor: PostgreSQL 16
 -- Autor: Piero Rivera
@@ -622,6 +622,145 @@ COMMENT ON PROCEDURE prc_purge_audit_log(INT, INT) IS
 
 
 -- =============================================================================
+-- PRC-03: prc_reporte_prs  (CURSOR implícito: FOR ... IN SELECT)
+-- Descripción : Recorre todos los récords personales fila por fila con un
+--               cursor implícito y emite un renglón de reporte por cada PR.
+--               PostgreSQL abre, avanza y cierra el cursor automáticamente.
+-- Parámetros  : (ninguno)
+-- Uso         : CALL prc_reporte_prs();
+-- =============================================================================
+CREATE OR REPLACE PROCEDURE prc_reporte_prs()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    r RECORD;   -- fila actual entregada por el cursor implícito
+BEGIN
+    FOR r IN
+        SELECT e.name        AS ejercicio,
+               pr.max_1rm     AS max_1rm,
+               pr.achieved_at AS achieved_at
+        FROM personal_record pr
+        JOIN exercise e ON e.id = pr.exercise_id
+        ORDER BY pr.max_1rm DESC
+    LOOP
+        RAISE NOTICE 'PR | % : % kg (1RM) logrado el %',
+            r.ejercicio, r.max_1rm, r.achieved_at::date;
+    END LOOP;
+END;
+$$;
+
+COMMENT ON PROCEDURE prc_reporte_prs() IS
+    'PRC-03 (CURSOR implícito FOR..IN): Recorre personal_record fila por fila '
+    'y emite un renglón de reporte por cada récord vía RAISE NOTICE.';
+
+
+-- =============================================================================
+-- PRC-04: prc_resumen_sesion_detallado  (CURSOR EXPLÍCITO)
+-- Descripción : Recorre set por set una sesión con un cursor explícito
+--               (DECLARE ... CURSOR FOR / OPEN / FETCH / CLOSE).
+--               Emite un RAISE NOTICE por cada set mostrando:
+--                 set_number, ejercicio, reps, peso, volumen, 1RM estimado
+--                 y si fue PR.
+--               Al final imprime el resumen acumulado de la sesión:
+--                 total de sets, volumen acumulado y PRs logrados.
+-- Parámetros  : p_session_id  INT — ID de la sesión a resumir
+-- Uso         : CALL prc_resumen_sesion_detallado(1);
+-- Diferencia con prc_reporte_prs (PRC-03):
+--               PRC-03 usa cursor IMPLÍCITO (FOR r IN SELECT ... LOOP):
+--                 PostgreSQL abre/avanza/cierra el cursor automáticamente.
+--               PRC-04 usa cursor EXPLÍCITO: el programador declara la variable
+--                 de cursor, la abre con OPEN, avanza con FETCH y la cierra
+--                 con CLOSE — control manual completo del ciclo de vida.
+-- =============================================================================
+CREATE OR REPLACE PROCEDURE prc_resumen_sesion_detallado(p_session_id INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    -- Declaración del cursor explícito: asocia un nombre al SELECT
+    -- pero NO lo ejecuta todavía (eso ocurre en OPEN).
+    cur_sets CURSOR FOR
+        SELECT
+            ws.set_number,
+            e.name          AS ejercicio,
+            ws.reps,
+            ws.weight_kg,
+            ws.volume,
+            ws.estimated_1rm,
+            ws.is_pr
+        FROM workout_set ws
+        JOIN exercise e ON e.id = ws.exercise_id
+        WHERE ws.session_id = p_session_id
+        ORDER BY ws.logged_at, ws.set_number;
+
+    rec          RECORD;          -- fila actual extraída por FETCH
+    v_vol_acum   NUMERIC(12,2) := 0;
+    v_prs        INT            := 0;
+    v_total_sets INT            := 0;
+    v_exists     BOOLEAN;
+BEGIN
+    -- Verificar que la sesión exista
+    SELECT EXISTS(SELECT 1 FROM workout_session WHERE id = p_session_id)
+    INTO v_exists;
+
+    IF NOT v_exists THEN
+        RAISE EXCEPTION 'prc_resumen_sesion_detallado: la sesión % no existe.', p_session_id
+            USING ERRCODE = 'no_data_found';
+    END IF;
+
+    RAISE NOTICE '════════════════════════════════════════';
+    RAISE NOTICE '  Detalle de sesión #%', p_session_id;
+    RAISE NOTICE '════════════════════════════════════════';
+
+    -- OPEN: ejecuta la consulta y posiciona el cursor antes de la primera fila
+    OPEN cur_sets;
+
+    LOOP
+        -- FETCH: avanza el cursor y carga la siguiente fila en rec
+        FETCH cur_sets INTO rec;
+
+        -- EXIT WHEN NOT FOUND: sale del loop al agotar las filas
+        EXIT WHEN NOT FOUND;
+
+        -- Acumular métricas
+        v_total_sets := v_total_sets + 1;
+        v_vol_acum   := v_vol_acum + COALESCE(rec.volume, 0);
+        IF rec.is_pr THEN
+            v_prs := v_prs + 1;
+        END IF;
+
+        -- Emitir una línea por set
+        RAISE NOTICE 'Set % | %-30s | % reps × % kg | Vol: % kg | 1RM: % kg%',
+            LPAD(rec.set_number::TEXT, 2),
+            rec.ejercicio,
+            rec.reps,
+            rec.weight_kg,
+            COALESCE(rec.volume, 0),
+            COALESCE(rec.estimated_1rm, 0),
+            CASE WHEN rec.is_pr THEN ' 🏆 PR!' ELSE '' END;
+    END LOOP;
+
+    -- CLOSE: libera los recursos del cursor en el servidor
+    CLOSE cur_sets;
+
+    -- Resumen acumulado
+    RAISE NOTICE '────────────────────────────────────────';
+    IF v_total_sets = 0 THEN
+        RAISE NOTICE 'La sesión #% no tiene sets registrados.', p_session_id;
+    ELSE
+        RAISE NOTICE 'Total: % sets | Volumen acum.: % kg | PRs: %',
+            v_total_sets, v_vol_acum, v_prs;
+    END IF;
+    RAISE NOTICE '════════════════════════════════════════';
+END;
+$$;
+
+COMMENT ON PROCEDURE prc_resumen_sesion_detallado(INT) IS
+    'PRC-04 (CURSOR EXPLÍCITO): Recorre set a set una sesión con DECLARE CURSOR / '
+    'OPEN / FETCH / CLOSE. Emite RAISE NOTICE por cada set y un resumen acumulado '
+    '(total sets, volumen y PRs) al final. Contrasta con PRC-03 (cursor implícito).';
+
+
+-- =============================================================================
 -- Verificación: listar los SPs creados
 -- =============================================================================
 SELECT
@@ -638,6 +777,8 @@ WHERE routine_schema = 'public'
       'sp_get_exercise_stats',
       'sp_weekly_digest',
       'prc_recalc_personal_records',
-      'prc_purge_audit_log'
+      'prc_purge_audit_log',
+      'prc_reporte_prs',
+      'prc_resumen_sesion_detallado'
   )
 ORDER BY routine_type DESC, routine_name;

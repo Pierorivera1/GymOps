@@ -1,0 +1,189 @@
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+DROP INDEX
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+CREATE INDEX
+COMMENT
+           seccion           
+-----------------------------
+ === PLANES DE EJECUCIÓN ===
+(1 row)
+
+                  plan                  
+----------------------------------------
+ --- Plan 1: historial de ejercicio ---
+(1 row)
+
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2.72..2.73 rows=1 width=40) (actual time=0.069..0.073 rows=6 loops=1)
+   Buffers: shared hit=2
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on exercise  (cost=0.00..1.64 rows=1 width=4) (actual time=0.009..0.015 rows=1 loops=1)
+           Filter: ((name)::text = 'Barbell Bench Press'::text)
+           Rows Removed by Filter: 50
+           Buffers: shared hit=1
+   ->  Sort  (cost=1.08..1.09 rows=1 width=40) (actual time=0.067..0.068 rows=6 loops=1)
+         Sort Key: ws.logged_at DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=2
+         ->  Seq Scan on workout_set ws  (cost=0.00..1.07 rows=1 width=40) (actual time=0.031..0.034 rows=6 loops=1)
+               Filter: (exercise_id = $0)
+               Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=104 read=7
+ Planning Time: 0.923 ms
+ Execution Time: 0.119 ms
+(18 rows)
+
+              plan               
+---------------------------------
+ --- Plan 2: PR de ejercicio ---
+(1 row)
+
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ Seq Scan on personal_record  (cost=1.64..2.65 rows=1 width=22) (actual time=0.020..0.021 rows=1 loops=1)
+   Filter: (exercise_id = $0)
+   Buffers: shared hit=2
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on exercise  (cost=0.00..1.64 rows=1 width=4) (actual time=0.005..0.011 rows=1 loops=1)
+           Filter: ((name)::text = 'Barbell Bench Press'::text)
+           Rows Removed by Filter: 50
+           Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=36 read=2
+ Planning Time: 0.269 ms
+ Execution Time: 0.037 ms
+(12 rows)
+
+                plan                
+------------------------------------
+ --- Plan 3: sesiones recientes ---
+(1 row)
+
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.03..1.03 rows=2 width=20) (actual time=0.014..0.016 rows=2 loops=1)
+   Buffers: shared hit=1
+   ->  Sort  (cost=1.03..1.03 rows=2 width=20) (actual time=0.013..0.014 rows=2 loops=1)
+         Sort Key: started_at DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=1
+         ->  Seq Scan on workout_session  (cost=0.00..1.02 rows=2 width=20) (actual time=0.006..0.008 rows=2 loops=1)
+               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=24 read=3
+ Planning Time: 0.222 ms
+ Execution Time: 0.030 ms
+(12 rows)
+
+                   plan                    
+-------------------------------------------
+ --- Plan 4: búsqueda case-insensitive ---
+(1 row)
+
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Seq Scan on exercise  (cost=0.00..1.77 rows=1 width=280) (actual time=0.010..0.045 rows=1 loops=1)
+   Filter: (lower((name)::text) = 'barbell bench press'::text)
+   Rows Removed by Filter: 50
+   Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.092 ms
+ Execution Time: 0.056 ms
+(8 rows)
+
+                       plan                       
+--------------------------------------------------
+ --- Plan 5: sets que son PR (índice parcial) ---
+(1 row)
+
+                                                 QUERY PLAN                                                 
+------------------------------------------------------------------------------------------------------------
+ Sort  (cost=1.08..1.09 rows=3 width=26) (actual time=0.018..0.019 rows=1 loops=1)
+   Sort Key: estimated_1rm DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1
+   ->  Seq Scan on workout_set  (cost=0.00..1.06 rows=3 width=26) (actual time=0.006..0.008 rows=1 loops=1)
+         Filter: is_pr
+         Rows Removed by Filter: 5
+         Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.079 ms
+ Execution Time: 0.029 ms
+(12 rows)
+
+             seccion              
+----------------------------------
+ === ÍNDICES CREADOS EN LA BD ===
+(1 row)
+
+                     indice                      |      tabla       |                                                                definicion                                                                
+-------------------------------------------------+------------------+------------------------------------------------------------------------------------------------------------------------------------------
+ idx_audit_changed_at                            | audit_log        | CREATE INDEX idx_audit_changed_at ON public.audit_log USING btree (changed_at DESC)
+ idx_audit_table_op                              | audit_log        | CREATE INDEX idx_audit_table_op ON public.audit_log USING btree (table_name, operation, changed_at DESC)
+ exercise_name_key                               | exercise         | CREATE UNIQUE INDEX exercise_name_key ON public.exercise USING btree (name)
+ idx_exercise_muscle                             | exercise         | CREATE INDEX idx_exercise_muscle ON public.exercise USING btree (muscle_group_id)
+ idx_exercise_name_lower                         | exercise         | CREATE INDEX idx_exercise_name_lower ON public.exercise USING btree (lower((name)::text))
+ guide_article_slug_key                          | guide_article    | CREATE UNIQUE INDEX guide_article_slug_key ON public.guide_article USING btree (slug)
+ guide_article_title_key                         | guide_article    | CREATE UNIQUE INDEX guide_article_title_key ON public.guide_article USING btree (title)
+ muscle_group_name_key                           | muscle_group     | CREATE UNIQUE INDEX muscle_group_name_key ON public.muscle_group USING btree (name)
+ idx_pr_exercise                                 | personal_record  | CREATE INDEX idx_pr_exercise ON public.personal_record USING btree (exercise_id)
+ idx_pr_max_1rm                                  | personal_record  | CREATE INDEX idx_pr_max_1rm ON public.personal_record USING btree (max_1rm DESC)
+ personal_record_exercise_id_key                 | personal_record  | CREATE UNIQUE INDEX personal_record_exercise_id_key ON public.personal_record USING btree (exercise_id)
+ program_name_key                                | program          | CREATE UNIQUE INDEX program_name_key ON public.program USING btree (name)
+ program_day_program_id_day_order_key            | program_day      | CREATE UNIQUE INDEX program_day_program_id_day_order_key ON public.program_day USING btree (program_id, day_order)
+ idx_routine_day                                 | routine_exercise | CREATE INDEX idx_routine_day ON public.routine_exercise USING btree (program_day_id)
+ routine_exercise_program_day_id_exercise_id_key | routine_exercise | CREATE UNIQUE INDEX routine_exercise_program_day_id_exercise_id_key ON public.routine_exercise USING btree (program_day_id, exercise_id)
+ idx_session_active                              | workout_session  | CREATE INDEX idx_session_active ON public.workout_session USING btree (id) WHERE (ended_at IS NULL)
+ idx_session_program_day                         | workout_session  | CREATE INDEX idx_session_program_day ON public.workout_session USING btree (program_day_id)
+ idx_session_started                             | workout_session  | CREATE INDEX idx_session_started ON public.workout_session USING btree (started_at DESC)
+ idx_set_exercise_1rm                            | workout_set      | CREATE INDEX idx_set_exercise_1rm ON public.workout_set USING btree (exercise_id, estimated_1rm DESC NULLS LAST)
+ idx_set_exercise_date                           | workout_set      | CREATE INDEX idx_set_exercise_date ON public.workout_set USING btree (exercise_id, logged_at DESC)
+ idx_set_is_pr                                   | workout_set      | CREATE INDEX idx_set_is_pr ON public.workout_set USING btree (exercise_id, estimated_1rm DESC) WHERE (is_pr = true)
+ idx_set_logged_at                               | workout_set      | CREATE INDEX idx_set_logged_at ON public.workout_set USING btree (logged_at DESC)
+ idx_set_session                                 | workout_set      | CREATE INDEX idx_set_session ON public.workout_set USING btree (session_id)
+(23 rows)
+
