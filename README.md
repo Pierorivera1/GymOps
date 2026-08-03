@@ -1,9 +1,9 @@
-# GymOps-FIEI 🏋️
+# GymOps 🏋️
 
-> Herramienta de seguimiento de entrenamiento para la terminal, construida como **proyecto final de Base de Datos II (UNFV)**.
+> Herramienta de seguimiento de entrenamiento para la terminal (CLI) con arquitectura **Database-First** basada en **PostgreSQL 16** y **Python 3.12**.
 
 > [!IMPORTANT]
-> **Enfoque del proyecto.** GymOps es una aplicación CLI real, pero su propósito académico es demostrar el **uso avanzado de una base de datos relacional en PostgreSQL**. Toda la lógica de negocio (cálculo de 1RM, detección de PRs, auditoría, validaciones) vive en la base de datos mediante procedimientos almacenados, funciones, triggers, vistas e índices — no en el código Python, que actúa solo como capa de presentación sobre `psycopg2`. Cada comando del CLI está mapeado a los objetos SQL que ejecuta; el detalle por fase con el código SQL de cada uno se documenta en el manual de usuario entregado al curso (no incluido en este repositorio).
+> **Enfoque técnico y arquitectura.** GymOps es una aplicación CLI completa donde toda la lógica de negocio (cálculo de 1RM, detección automática de Récords Personales, auditoría JSONB, control de sobrecarga progresiva y validaciones) está delegada directamente en PostgreSQL mediante **procedimientos almacenados, triggers, funciones UDF y vistas optimizadas**. La capa de aplicación en Python (`Typer` + `psycopg2`) actúa como una interfaz de presentación limpia sin ORMs intermedios.
 
 ### ¿A quién va dirigido?
 GymOps está diseñado principalmente para:
@@ -189,7 +189,52 @@ GymOps corre sobre **PostgreSQL 16** (Docker). El esquema incluye:
 | `guide_article` | Guías y artículos de fitness (contenido en Markdown) |
 | `active_program` | Tabla de control (fila única) con el programa y día activos |
 
-> El detalle completo de normalización (justificación de 1FN/2FN/3FN y las desnormalizaciones deliberadas) está en [`proyecto_bdII/DESCRIPCION_PROYECTO.md`](proyecto_bdII/DESCRIPCION_PROYECTO.md) §1.8.
+### Diagrama de Entidades (ERD)
+
+Notación: `1 ──< N` indica una relación uno-a-muchos (el lado `<` es el "muchos", donde vive la FK). Las flechas apuntan de la tabla hija (FK) a la tabla padre (PK).
+
+```
+                    program
+                       ▲ 1
+                       │
+                       │ N
+                  program_day ◄──────────────┐
+                    ▲ 1     ▲ 1              │ N
+                    │       │ N              │
+                    │ N   workout_session    │
+          routine_exercise    ▲ 1            │
+                    │ N       │ N            │
+                    │      workout_set       │
+                    ▼ 1       │ N            │
+   muscle_group ──< exercise ─┤             (workout_session.program_day_id)
+        1        N   ▲ 1      │ N
+                     │        ▼ 1
+                     │   personal_record  (1:1 por ejercicio, vía UNIQUE)
+                     │        │
+                     └────────┘  (personal_record.exercise_id → exercise.id;
+                                  personal_record.set_id → workout_set.id)
+
+   audit_log         → tabla independiente, sin FKs (preserva el historial aunque
+                       se borren registros de origen). Poblada por triggers.
+   active_program     → tabla de control de fila única (program_id, day_id).
+   guide_article      → tabla independiente de contenido informativo.
+```
+
+#### Relaciones e Integridad Referencial (`ON DELETE`)
+
+| Tabla hija (FK) | Columna | Tabla padre | Regla ON DELETE | Descripción |
+|-----------------|---------|-------------|-----------------|-------------|
+| `exercise` | `muscle_group_id` | `muscle_group` | `RESTRICT` | No borra grupo si tiene ejercicios asociados |
+| `program_day` | `program_id` | `program` | `CASCADE` | Borrar programa elimina sus días |
+| `routine_exercise` | `program_day_id` | `program_day` | `CASCADE` | Borrar día elimina sus ejercicios prescritos |
+| `routine_exercise` | `exercise_id` | `exercise` | `RESTRICT` | No borra ejercicio si está en rutinas |
+| `workout_session` | `program_day_id` | `program_day` | `SET NULL` | Preserva historial si se borra el día |
+| `workout_set` | `session_id` | `workout_session` | `CASCADE` | Borrar sesión elimina sus sets |
+| `workout_set` | `exercise_id` | `exercise` | `RESTRICT` | No borra ejercicio si tiene sets registrados |
+| `personal_record` | `exercise_id` | `exercise` | `CASCADE` | Récord se borra si se elimina el ejercicio |
+| `personal_record` | `set_id` | `workout_set` | `SET NULL` | Mantiene el PR aunque se borre el set específico |
+
+> Para un análisis exhaustivo del **Modelo Conceptual vs Modelo Físico** (con diagramas de arquitectura en imagen), consulta [`proyecto_bdII/MODELO_DATOS.md`](proyecto_bdII/MODELO_DATOS.md). Para el análisis de **Normalización en 3FN y Desnormalización Controlada**, consulta [`proyecto_bdII/DESCRIPCION_PROYECTO.md`](proyecto_bdII/DESCRIPCION_PROYECTO.md) §1.8.
 
 ### Conexión
 
@@ -284,8 +329,12 @@ uv run pytest
 
 ---
 
-## BD II — Proyecto de curso
+## Documentación Técnica de Arquitectura
 
-Este repositorio es el **proyecto final de Base de Datos II** en la UNFV. La documentación completa (planning por fases, manual de usuario con el mapeo comando → código SQL, diagramas y formato oficial) se entrega al curso por separado; en este repositorio público queda como referencia [`proyecto_bdII/DESCRIPCION_PROYECTO.md`](proyecto_bdII/DESCRIPCION_PROYECTO.md), con la problemática, objetivos, alcance, entidades, reglas de negocio, **normalización (3FN)** y resumen de implementación SQL.
+Para una revisión detallada del diseño de la base de datos, decisiones de arquitectura y modelo relacional, consulta los siguientes documentos:
 
-**Stack**: PostgreSQL 16 · Python 3.12 · Docker · Typer · Rich · psycopg2
+- 📐 [**Modelo de Datos (Conceptual vs Físico)**](proyecto_bdII/MODELO_DATOS.md): Diagramas visuales de entidad-relación, tipos de dato en PostgreSQL y políticas de borrado.
+- 📋 [**Descripción del Proyecto**](proyecto_bdII/DESCRIPCION_PROYECTO.md): Especificación de requerimientos, reglas de negocio, justificación de normalización en 3FN y desnormalizaciones deliberadas.
+- 🗄️ [**Scripts SQL en `proyecto_bdII/sql/`**](proyecto_bdII/sql/): Implementación modular DDL, DML, vistas, índices, Stored Procedures, UDFs y Triggers.
+
+**Stack Tecnológico**: PostgreSQL 16 · Python 3.12 · Docker · Typer · Rich · psycopg2
