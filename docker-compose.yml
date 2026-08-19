@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gymops-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gymops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gymops_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-gymops_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - gymops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gymops} -d ${POSTGRES_DB:-gymops_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - gymops-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gymops-app
+    environment:
+      GYMOPS_DB_HOST: db
+      GYMOPS_DB_PORT: 5432
+      GYMOPS_DB_USER: ${POSTGRES_USER:-gymops}
+      GYMOPS_DB_PASSWORD: ${POSTGRES_PASSWORD:-gymops_pass}
+      GYMOPS_DB_NAME: ${POSTGRES_DB:-gymops_db}
+    depends_on:
+      db:
+        condition: service_healthy
+    tty: true
+    stdin_open: true
+    networks:
+      - gymops-network
+
+volumes:
+  gymops_pgdata:
+
+networks:
+  gymops-network:
+    driver: bridge

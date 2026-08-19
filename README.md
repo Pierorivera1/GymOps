@@ -1,6 +1,12 @@
 # GymOps 🏋️
 
-> Herramienta de seguimiento de entrenamiento para la terminal (CLI) con arquitectura **Database-First** basada en **PostgreSQL 16** y **Python 3.12**.
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Python](https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/uv-DE5FE9?style=for-the-badge&logo=astral&logoColor=white)](https://github.com/astral-sh/uv)
+
+> Herramienta de seguimiento de entrenamiento para la terminal (CLI) con arquitectura **Database-First** basada en **PostgreSQL 16** y **Python 3.12**, totalmente containerizada con **Docker & Docker Compose**.
 
 > [!IMPORTANT]
 > **Enfoque técnico y arquitectura.** GymOps es una aplicación CLI completa donde toda la lógica de negocio (cálculo de 1RM, detección automática de Récords Personales, auditoría JSONB, control de sobrecarga progresiva y validaciones) está delegada directamente en PostgreSQL mediante **procedimientos almacenados, triggers, funciones UDF y vistas optimizadas**. La capa de aplicación en Python (`Typer` + `psycopg2`) actúa como una interfaz de presentación limpia sin ORMs intermedios.
@@ -31,6 +37,7 @@ El sistema recopila información y principios de entrenamiento basados en la cie
 
 ## Características
 
+- **Containerización completa**: Todo el entorno (app + BD) orquestado con Docker y Docker Compose.
 - **Rutinas listas para usar**: Viene precargado con splits conocidos y recomendados por su efectividad (Upper/Lower 4 días, ULPPL 5 días, PPL 6 días). Ideal para quienes no saben qué rutina hacer.
 - **Programas personalizados**: Crea tus propios programas y días de entrenamiento desde la CLI.
 - **Backend PostgreSQL**: Base de datos relacional completa con procedimientos almacenados, vistas, triggers e índices.
@@ -46,34 +53,125 @@ El sistema recopila información y principios de entrenamiento basados en la cie
 ## Inicio rápido
 
 ### Requisitos previos
-- Python 3.12+
-- [uv](https://github.com/astral-sh/uv)
-- Docker (para PostgreSQL)
+- [Docker](https://docs.docker.com/get-docker/) y Docker Compose
 
-### Configuración
+---
+
+### Opción 1: Docker & Docker Compose (Recomendado — One-Command Setup)
+
+Esta opción containeriza tanto la base de datos PostgreSQL como la aplicación CLI, garantizando que el entorno funcione exactamente igual en cualquier máquina sin necesidad de configurar Python ni dependencias locales.
 
 ```bash
-# Clonar el repositorio
+# 1. Clonar el repositorio
 git clone https://github.com/Pierorivera1/GymOps.git
 cd GymOps
 
-# Iniciar PostgreSQL con Docker
-docker run --name gymops-db -e POSTGRES_USER=gymops \
-  -e POSTGRES_PASSWORD=gymops_pass \
-  -e POSTGRES_DB=gymops_db \
-  -p 5432:5432 -d postgres:16
+# 2. Iniciar la base de datos PostgreSQL en segundo plano
+docker compose up -d db
 
-# Crear entorno virtual e instalar dependencias
+# 3. (Recomendado) Configurar el Alias para uso nativo en tu terminal
+alias gymops="docker compose run --rm app"
+
+# Para hacerlo permanente en tu terminal (Bash / Zsh):
+echo 'alias gymops="docker compose run --rm app"' >> ~/.bashrc
+source ~/.bashrc
+
+# 4. ¡Listo! Ejecuta cualquier comando GymOps directamente
+gymops --help
+gymops list-programs
+```
+
+> [!TIP]
+> **¿Prefieres no crear un alias?** Puedes usar directamente el script auxiliar incluido:
+> ```bash
+> ./gymops-docker.sh list-programs
+> ./gymops-docker.sh --help
+> ```
+
+---
+
+### Opción 2: Instalación Local con `uv` (Desarrollo nativo)
+
+Si deseas desarrollar o modificar el código fuente de Python directamente en tu máquina host:
+
+```bash
+# 1. Iniciar la base de datos PostgreSQL con Docker
+docker compose up -d db
+
+# 2. Crear entorno virtual e instalar dependencias con uv
 uv venv
 source .venv/bin/activate
 uv pip install -e .
 
-# Inicializar la base de datos (ejecutar los scripts SQL en orden)
-psql -h localhost -U gymops -d gymops_db -f proyecto_bdII/sql/01_ddl.sql
-psql -h localhost -U gymops -d gymops_db -f proyecto_bdII/sql/02_seed.sql
-
-# Verificar que funciona
+# 3. Verificar funcionamiento
 gymops --help
+```
+
+---
+
+## 🐳 Arquitectura Docker & DevOps
+
+GymOps implementa un entorno de microservicios contenerizado bajo las mejores prácticas de la industria:
+
+```mermaid
+graph TD
+    subgraph Host [Host / Tu Terminal]
+        User["Usuario: gymops <comando>"]
+        Alias["Shell Alias: alias gymops='docker compose run --rm app'"]
+        Script["Script: ./gymops-docker.sh <comando>"]
+        User --> Alias
+        User --> Script
+    end
+
+    subgraph DockerEnv [Infraestructura Docker Compose]
+        Alias -- Ejecuta --> ComposeRun["docker compose run --rm app"]
+        Script -- Ejecuta --> ComposeRun
+
+        subgraph VirtualNet [Red Aislada: gymops-network]
+            App["Contenedor: gymops-app (Python 3.12 + uv)"]
+            DB["Contenedor: gymops-db (PostgreSQL 16 Alpine)"]
+            
+            ComposeRun --> App
+            App -- "Conexión TCP (Puerto 5432)" --> DB
+        end
+
+        subgraph Storage [Persistencia de Datos]
+            Volume[("Volumen Docker: gymops_pgdata")]
+            DB --- Volume
+        end
+    end
+```
+
+### Principios de DevOps implementados:
+1. **Multi-Stage / Fast Build con `uv`**: Uso de la imagen oficial de `uv` en `Dockerfile` con `python:3.12-slim` para instalaciones de dependencias en segundos.
+2. **Healthchecks automáticos**: El servicio `db` implementa un healthcheck con `pg_isready`. El servicio `app` espera automáticamente a que PostgreSQL esté 100% saludable antes de lanzar cualquier comando.
+3. **Persistencia desacoplada**: Los datos de entrenamiento, rutinas y registros de auditoría residen en el volumen persistente `gymops_pgdata`, sobreviviendo al apagado o reinicio de contenedores.
+4. **Contenedores efímeros con `--rm`**: Cada comando CLI se ejecuta en un contenedor temporal interactivo (`tty: true`, `stdin_open: true`) que se destruye al finalizar, evitando el consumo innecesario de memoria en el host.
+5. **Aislamiento de red**: Comunicación interna a través de un puente de red virtual (`gymops-network`).
+
+### Comandos de gestión de Docker:
+
+```bash
+# Iniciar servicios en segundo plano
+docker compose up -d db
+
+# Ver el estado y healthcheck de los servicios
+docker compose ps
+
+# Ver logs de la base de datos en tiempo real
+docker compose logs -f db
+
+# Reconstruir la imagen de la aplicación tras cambios en código
+docker compose build
+
+# Detener los servicios
+docker compose stop
+
+# Eliminar contenedores manteniendo los datos del volumen
+docker compose down
+
+# Eliminar contenedores Y los volúmenes de datos (reset completo)
+docker compose down -v
 ```
 
 ---
@@ -299,16 +397,24 @@ Contraseña:    gymops_pass
 
 ```
 GymOps/
-├── gymops/
-│   ├── cli.py          # Todos los comandos Typer del CLI
-│   ├── db.py           # Capa de base de datos (PostgreSQL)
-│   ├── i18n.py         # Internacionalización (en / es)
-│   ├── models.py       # Dataclasses: Workout, Exercise, PR, Routine
-│   └── report.py       # Generador de resúmenes semanales
-├── proyecto_bdII/
-│   ├── DESCRIPCION_PROYECTO.md   # Descripción completa del proyecto (BD II)
-│   └── sql/                      # Todos los scripts SQL (fases 1–7)
-└── tests/              # Suite de pruebas con pytest
+├── gymops/                       # Código fuente de la aplicación CLI
+│   ├── cli.py                    # Todos los comandos Typer del CLI
+│   ├── db.py                     # Capa de base de datos (PostgreSQL/psycopg2)
+│   ├── i18n.py                   # Internacionalización (en / es)
+│   ├── models.py                 # Dataclasses: Workout, Exercise, PR, Routine
+│   └── report.py                 # Generador de resúmenes semanales
+├── proyecto_bdII/                # Entregables y scripts SQL del proyecto
+│   ├── DESCRIPCION_PROYECTO.md   # Documentación académica y reglas de negocio
+│   ├── MODELO_DATOS.md           # Modelo conceptual, físico y diagramas ERD
+│   └── sql/                      # Scripts SQL modulares (01_ddl.sql … 09_triggers.sql)
+├── tests/                        # Suite de pruebas con pytest
+├── .dockerignore                 # Exclusión de archivos en build context
+├── .env.example                  # Plantilla de variables de entorno
+├── docker-compose.yml            # Orquestación multi-contenedor (app + db)
+├── Dockerfile                    # Definición de contenedor Python 3.12 + uv
+├── gymops-docker.sh              # Script ejecutable auxiliar para Docker
+├── pyproject.toml                # Metadatos del proyecto y dependencias
+└── uv.lock                       # Lockfile reproducible de dependencias
 ```
 
 ---
