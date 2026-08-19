@@ -47,6 +47,7 @@ digest_*.md
 
 # Entregables académicos (se entregan por Drive al profesor, no vía GitHub)
 INSTRUCCIONES.md
+PLANNING_DOCKER.md
 proyecto_bdII/PLANNING.md
 proyecto_bdII/manual_usuario.md
 Formato_Proyecto_Final_Base_Datos_II.pdf
